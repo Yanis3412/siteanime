@@ -1,10 +1,3 @@
-import { Redis } from '@upstash/redis';
-
-const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
-
 export default async function handler(req, res) {
     // Activer CORS
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -17,12 +10,24 @@ export default async function handler(req, res) {
         return;
     }
 
+    const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+    const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+        return res.status(500).json({ error: 'Missing Upstash configuration' });
+    }
+
     try {
         if (req.method === 'GET') {
-            // Lire depuis Upstash Redis
-            const data = await redis.get('anime-manga-data');
+            // Lire depuis Upstash Redis via REST API
+            const response = await fetch(`${UPSTASH_URL}/get/anime-manga-data`, {
+                headers: {
+                    Authorization: `Bearer ${UPSTASH_TOKEN}`
+                }
+            });
+            const result = await response.json();
             
-            if (!data) {
+            if (!result.result) {
                 return res.status(200).json({
                     library: [],
                     imageCache: {},
@@ -31,13 +36,30 @@ export default async function handler(req, res) {
                 });
             }
 
+            // Upstash retourne les données en string JSON
+            const data = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
             return res.status(200).json(data);
         }
 
         if (req.method === 'POST' || req.method === 'PUT') {
-            // Sauvegarder dans Upstash Redis
-            const bodyData = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-            await redis.set('anime-manga-data', bodyData);
+            // Sauvegarder dans Upstash Redis via REST API
+            const bodyData = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+            
+            const response = await fetch(`${UPSTASH_URL}/set/anime-manga-data`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${UPSTASH_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify([bodyData])
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
             return res.status(200).json({ success: true, message: 'Data saved successfully' });
         }
 
