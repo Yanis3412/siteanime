@@ -1049,9 +1049,8 @@ select {
 
 .section-header {
     margin-bottom: 20px;
-    position: sticky;
-    top: 0;
-    background: transparent;
+    position: relative;
+    background: var(--bg-color);
     z-index: 10;
     padding: 0;
 }
