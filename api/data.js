@@ -45,13 +45,11 @@ export default async function handler(req, res) {
             // Sauvegarder dans Upstash Redis via REST API
             const bodyData = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
             
-            const response = await fetch(`${UPSTASH_URL}/set/anime-manga-data`, {
-                method: 'POST',
+            const response = await fetch(`${UPSTASH_URL}/set/anime-manga-data/${encodeURIComponent(bodyData)}`, {
+                method: 'GET',
                 headers: {
-                    Authorization: `Bearer ${UPSTASH_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify([bodyData])
+                    Authorization: `Bearer ${UPSTASH_TOKEN}`
+                }
             });
             
             const result = await response.json();
