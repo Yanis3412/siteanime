@@ -89,7 +89,7 @@ h1 {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
     margin-bottom: 30px;
 }
 
@@ -134,7 +134,7 @@ select {
     color: white;
     font-weight: 600;
     border: none;
-    padding: 14px 28px;
+    padding: 12px 28px;
     border-radius: 16px;
     cursor: pointer;
     font-family: 'Outfit', sans-serif;
@@ -142,6 +142,7 @@ select {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    height: 46px;
 }
 
 .add-btn:hover {
