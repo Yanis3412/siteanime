@@ -562,8 +562,8 @@ function renderCardWithSeasons(container, item, index, icon, cachedImage, isFavS
     
     const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
     cardGroup.innerHTML = `
-        <div class="card-group-header" onclick="toggleExpandWrapper(${index})">
-            <button class="expand-btn">▶</button>
+        <div class="card-group-header" onclick="openDetailPanel(${index})">
+            <button class="expand-btn" onclick="event.stopPropagation(); toggleExpandWrapper(${index})" title="Afficher/masquer les saisons">▶</button>
             <div class="card-icon" data-index="${index}">${iconHtml}</div>
             <div class="card-info">
                 <h3 class="card-title">${item.title}</h3>
