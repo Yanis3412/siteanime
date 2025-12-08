@@ -1,18 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ff8c00;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#e63946;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9d4edd;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c77dff;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#e63946;stop-opacity:0" />
     </linearGradient>
   </defs>
   
   <!-- Fond arrondi -->
-  <rect x="10" y="10" width="80" height="80" rx="15" fill="url(#bgGradient)"/>
+  <rect x="10" y="10" width="80" height="80" rx="18" fill="url(#bgGradient)"/>
   
-  <!-- Livre/Manga simplifié -->
-  <rect x="25" y="30" width="25" height="40" rx="2" fill="#1c2128" opacity="0.8"/>
-  <rect x="50" y="30" width="25" height="40" rx="2" fill="#1c2128" opacity="0.6"/>
+  <!-- Effet brillant -->
+  <rect x="10" y="10" width="80" height="40" rx="18" fill="url(#shineGradient)"/>
   
-  <!-- Ligne de séparation -->
-  <line x1="50" y1="30" x2="50" y2="70" stroke="#ff8c00" stroke-width="2"/>
+  <!-- Livre/Manga -->
+  <rect x="24" y="28" width="24" height="44" rx="3" fill="#1e1528" opacity="0.9"/>
+  <rect x="52" y="28" width="24" height="44" rx="3" fill="#1e1528" opacity="0.7"/>
+  
+  <!-- Pages intérieures -->
+  <rect x="28" y="34" width="16" height="2" rx="1" fill="#c77dff" opacity="0.6"/>
+  <rect x="28" y="40" width="14" height="2" rx="1" fill="#c77dff" opacity="0.4"/>
+  <rect x="28" y="46" width="16" height="2" rx="1" fill="#c77dff" opacity="0.6"/>
+  
+  <!-- Étoile (anime/favori) -->
+  <polygon points="63,38 65,44 71,44 66,48 68,54 63,50 58,54 60,48 55,44 61,44" fill="#c77dff" opacity="0.8"/>
+  
+  <!-- Ligne centrale -->
+  <line x1="50" y1="28" x2="50" y2="72" stroke="#e63946" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
