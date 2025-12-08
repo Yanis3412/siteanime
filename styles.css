@@ -1050,7 +1050,7 @@ select {
 .section-header {
     margin-bottom: 20px;
     position: relative;
-    background: var(--bg-color);
+    background: transparent;
     z-index: 10;
     padding: 0;
 }
