@@ -640,6 +640,10 @@ async function refreshItemWithSeasons(index) {
     delete imageCache[cacheKey];
     localStorage.setItem('imageCache', JSON.stringify(imageCache));
     
+    // Sauvegarder la progression actuelle
+    const currentProgress = item.current || 0;
+    const currentSeasonProgress = item.seasonProgress ? [...item.seasonProgress] : [];
+    
     delete library[index].seasons;
     delete library[index].seasonProgress;
     library[index].malId = null;
@@ -654,10 +658,13 @@ async function refreshItemWithSeasons(index) {
                 
                 if (info.seasons && info.seasons.length > 1) {
                     library[index].seasons = info.seasons;
-                    library[index].seasonProgress = new Array(info.seasons.length).fill(0);
+                    // Restaurer la progression des saisons si elle existe, sinon mettre 0
+                    library[index].seasonProgress = info.seasons.map((_, i) => currentSeasonProgress[i] || 0);
                     alert(`✅ ${info.seasons.length} saisons trouvées!`);
                 } else {
                     library[index].total = info.total || null;
+                    // Garder la progression actuelle
+                    library[index].current = currentProgress;
                 }
                 
                 if (info.imageUrl) {
