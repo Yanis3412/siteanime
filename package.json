@@ -9,5 +9,8 @@
   },
   "keywords": ["anime", "manga", "list"],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@vercel/kv": "^1.0.1"
+  }
 }

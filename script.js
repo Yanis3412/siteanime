@@ -17,19 +17,20 @@ async function loadData() {
             imageCache = data.imageCache || {};
             malInfoCache = data.malInfoCache || {};
             lastUpdateCheck = data.lastUpdateCheck || 0;
-            renderList();
-            checkForUpdates();
+            console.log('✅ Données chargées depuis le serveur');
+        } else {
+            throw new Error('Erreur de chargement');
         }
     } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
+        console.error('⚠️ Erreur lors du chargement, utilisation du localStorage:', error);
         // Fallback au localStorage en cas d'erreur
         library = JSON.parse(localStorage.getItem('viegoList')) || [];
         imageCache = JSON.parse(localStorage.getItem('imageCache')) || {};
         malInfoCache = JSON.parse(localStorage.getItem('malInfoCache')) || {};
-        lastUpdateCheck = localStorage.getItem('lastUpdateCheck') || 0;
-        renderList();
-        checkForUpdates();
+        lastUpdateCheck = parseInt(localStorage.getItem('lastUpdateCheck')) || 0;
     }
+    renderList();
+    checkForUpdates();
 }
 
 // Sauvegarder les données
@@ -54,9 +55,9 @@ async function saveData() {
             throw new Error('Erreur lors de la sauvegarde');
         }
 
-        console.log('Données sauvegardées avec succès');
+        console.log('✅ Données sauvegardées sur le serveur');
     } catch (error) {
-        console.error('Erreur lors de la sauvegarde:', error);
+        console.error('⚠️ Erreur lors de la sauvegarde, utilisation du localStorage:', error);
         // Fallback au localStorage
         localStorage.setItem('viegoList', JSON.stringify(library));
         localStorage.setItem('imageCache', JSON.stringify(imageCache));

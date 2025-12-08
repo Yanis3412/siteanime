@@ -56,9 +56,26 @@ siteanime/
    - Sélectionnez votre dépôt GitHub
    - Cliquez sur "Deploy"
 
-4. **Configuration (optionnel)**
-   - Les fichiers `vercel.json` et l'API `/api/data.js` sont configurés automatiquement
-   - Les données seront sauvegardées dans le dossier `public/`
+4. **Configurer Vercel KV (Base de données) - IMPORTANT**
+   
+   Pour que les données soient partagées entre appareils :
+   
+   a. Dans votre projet Vercel, allez dans l'onglet **Storage**
+   
+   b. Cliquez sur **Create Database**
+   
+   c. Sélectionnez **KV (Key-Value Store)**
+   
+   d. Donnez un nom (ex: "anime-manga-db") et cliquez **Create**
+   
+   e. Vercel configurera automatiquement les variables d'environnement
+   
+   f. Redéployez votre projet (Vercel le fera automatiquement)
+
+5. **C'est prêt !** 🎉
+   - Vos données seront maintenant sauvegardées en ligne
+   - Accessibles depuis n'importe quel appareil ou navigateur
+   - Limite gratuite : 100 000 requêtes/mois
 
 ## Développement local
 
