@@ -525,6 +525,13 @@ select {
     cursor: pointer;
     transition: transform 0.3s ease;
     padding: 4px;
+    width: 28px;
+    min-width: 28px;
+}
+
+.expand-btn-placeholder {
+    width: 28px;
+    min-width: 28px;
 }
 
 .card-group.expanded .expand-btn {

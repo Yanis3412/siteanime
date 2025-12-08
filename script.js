@@ -360,7 +360,7 @@ function renderList() {
             if (item.seasons && item.seasons.length > 1) {
                 renderCardWithSeasons(animeContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`]);
             } else {
-                renderSimpleCard(animeContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`]);
+                renderAnimeCard(animeContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`]);
             }
         });
     }
@@ -379,8 +379,10 @@ function renderList() {
             const index = library.indexOf(item);
             if (item.seasons && item.seasons.length > 1) {
                 renderCardWithSeasons(favContainer, item, index, item.type === 'Anime' ? '📺' : '📖', imageCache[`${item.title}-${item.type}`], true);
+            } else if (item.type === 'Anime') {
+                renderAnimeCard(favContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`], true);
             } else {
-                renderSimpleCard(favContainer, item, index, item.type === 'Anime' ? '📺' : '📖', imageCache[`${item.title}-${item.type}`], true);
+                renderSimpleCard(favContainer, item, index, '📖', imageCache[`${item.title}-${item.type}`], true);
             }
         });
     }
@@ -499,6 +501,61 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
         </div>
     `;
     container.appendChild(card);
+    
+    if (!cachedImage) {
+        fetchCardImage(item.title, item.type, index);
+    }
+}
+
+// Carte pour anime sans saisons (même style que avec saisons mais sans flèche)
+function renderAnimeCard(container, item, index, icon, cachedImage, isFavSection = false) {
+    const isActive = selectedIndex === index;
+    const percentage = item.total ? Math.round((item.current / item.total) * 100) : 0;
+    
+    let statusBadge = '';
+    if (item.status === 'ongoing') {
+        statusBadge = '<span class="status-ongoing">En cours</span>';
+    } else if (item.status === 'completed' || (item.total && item.current >= item.total)) {
+        statusBadge = '<span class="status-completed">Terminé</span>';
+    }
+    
+    const cardGroup = document.createElement('div');
+    cardGroup.className = `card-group ${isActive ? 'active' : ''}`;
+    
+    const iconHtml = cachedImage 
+        ? `<img src="${cachedImage}" alt="${item.title}" onerror="this.parentElement.innerHTML='<div class=card-icon-fallback>${icon}</div>'">`
+        : `<div class="card-icon-fallback">${icon}</div>`;
+    
+    const totalDisplay = item.total || '?';
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    
+    cardGroup.innerHTML = `
+        <div class="card-group-header" onclick="openDetailPanel(${index})">
+            <div class="expand-btn-placeholder"></div>
+            <div class="card-icon" data-index="${index}">${iconHtml}</div>
+            <div class="card-info">
+                <h3 class="card-title">${item.title}</h3>
+                <div class="card-meta">
+                    <span class="card-type">Anime (${totalDisplay} épisodes)</span>
+                    ${statusBadge}
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-count" style="margin-right: 10px;">
+                <strong>${item.current}</strong> / ${totalDisplay}
+            </div>
+            <div class="card-actions">
+                ${favBtn}
+                <button class="refresh-item-btn" onclick="event.stopPropagation(); refreshItemWithSeasonsWrapper(${index})" title="Rafraîchir">🔄</button>
+                <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${index})">✏️</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteItemWrapper(${index})">🗑️</button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(cardGroup);
     
     if (!cachedImage) {
         fetchCardImage(item.title, item.type, index);
