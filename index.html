@@ -139,6 +139,10 @@
                         <span>+</span>
                     </button>
                 </div>
+                <div class="detail-note-section">
+                    <h3>📝 Note personnelle</h3>
+                    <textarea id="detailNote" class="detail-note-input" placeholder="Ajouter une note..." onchange="detailSaveNote(this.value)"></textarea>
+                </div>
                 <div class="detail-buttons">
                     <button class="detail-btn fav" id="detailFavBtn" onclick="detailToggleFav()">
                         <span>⭐</span> Favori
@@ -155,6 +159,6 @@
     </div>
     <div class="detail-overlay" id="detailOverlay" onclick="closeDetailPanel()"></div>
 
-    <script src="script.js?v=20251209"></script>
+    <script src="script.js?v=20251210"></script>
 </body>
 </html>

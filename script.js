@@ -1025,6 +1025,9 @@ function openDetailPanel(index) {
     document.getElementById('detailProgressFill').style.width = percent + '%';
     document.getElementById('detailProgressInput').value = current;
     
+    // Note
+    document.getElementById('detailNote').value = item.note || '';
+    
     // Favori button
     const favBtn = document.getElementById('detailFavBtn');
     if (item.fav) {
@@ -1068,6 +1071,12 @@ async function detailToggleFav() {
     if (currentDetailIndex === null) return;
     await toggleFav(currentDetailIndex);
     openDetailPanel(currentDetailIndex);
+}
+
+async function detailSaveNote(value) {
+    if (currentDetailIndex === null) return;
+    library[currentDetailIndex].note = value;
+    await saveData();
 }
 
 function detailEdit() {
