@@ -660,7 +660,7 @@ async function refreshItemWithSeasons(index) {
                     localStorage.setItem('imageCache', JSON.stringify(imageCache));
                 }
                 
-                saveAndRender();
+                await saveAndRender();
             }
         } else {
             await refreshItem(index);
@@ -718,7 +718,7 @@ async function addItem() {
 
     library.push(newItem);
     const newIndex = library.length - 1;
-    saveAndRender();
+    await saveAndRender();
     titleInput.value = '';
     
     try {
@@ -742,7 +742,7 @@ async function addItem() {
                     localStorage.setItem('imageCache', JSON.stringify(imageCache));
                 }
                 
-                saveAndRender();
+                await saveAndRender();
             }
         } else {
             const info = await fetchMalInfo(newItem.title, newItem.type);
@@ -757,7 +757,7 @@ async function addItem() {
                     localStorage.setItem('imageCache', JSON.stringify(imageCache));
                 }
                 
-                saveAndRender();
+                await saveAndRender();
             }
         }
     } catch (error) {
@@ -861,7 +861,7 @@ async function saveEdit() {
     }
     
     closeEditModal();
-    saveAndRender();
+    await saveAndRender();
     
     if (titleChanged || typeChanged) {
         try {
@@ -872,7 +872,7 @@ async function saveEdit() {
                 if (info.total) {
                     library[editingIndex].total = info.total;
                 }
-                saveAndRender();
+                await saveAndRender();
             }
         } catch (error) {
             console.error('Error fetching MAL info:', error);
@@ -900,7 +900,7 @@ async function refreshItem(index) {
                 imageCache[cacheKey] = info.imageUrl;
                 localStorage.setItem('imageCache', JSON.stringify(imageCache));
             }
-            saveAndRender();
+            await saveAndRender();
         }
     } catch (error) {
         console.error('Error refreshing item:', error);
