@@ -104,6 +104,57 @@
         </div>
     </div>
 
-    <script src="script.js?v=20251208"></script>
+    <!-- Panneau latéral détails -->
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-panel-header">
+            <h2 id="detailTitle">Titre</h2>
+            <button class="detail-close-btn" onclick="closeDetailPanel()">✕</button>
+        </div>
+        <div class="detail-panel-content">
+            <div class="detail-image-container">
+                <img id="detailImage" src="" alt="Cover">
+            </div>
+            <div class="detail-info">
+                <div class="detail-badges">
+                    <span class="detail-badge type" id="detailType">Manga</span>
+                    <span class="detail-badge status" id="detailStatus">En cours</span>
+                </div>
+                <div class="detail-progress-section">
+                    <h3>Progression</h3>
+                    <div class="detail-progress-bar">
+                        <div class="detail-progress-fill" id="detailProgressFill"></div>
+                    </div>
+                    <div class="detail-progress-text">
+                        <span id="detailProgressCurrent">0</span> / <span id="detailProgressTotal">?</span>
+                        <span id="detailProgressType">chapitres</span>
+                    </div>
+                    <div class="detail-progress-percent" id="detailProgressPercent">0%</div>
+                </div>
+                <div class="detail-actions">
+                    <button class="detail-action-btn" onclick="detailUpdateProgress(-1)">
+                        <span>−</span>
+                    </button>
+                    <input type="number" id="detailProgressInput" class="detail-progress-input" onchange="detailSetProgress(this.value)">
+                    <button class="detail-action-btn" onclick="detailUpdateProgress(1)">
+                        <span>+</span>
+                    </button>
+                </div>
+                <div class="detail-buttons">
+                    <button class="detail-btn fav" id="detailFavBtn" onclick="detailToggleFav()">
+                        <span>⭐</span> Favori
+                    </button>
+                    <button class="detail-btn edit" onclick="detailEdit()">
+                        <span>✏️</span> Modifier
+                    </button>
+                    <button class="detail-btn delete" onclick="detailDelete()">
+                        <span>🗑️</span> Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="detail-overlay" id="detailOverlay" onclick="closeDetailPanel()"></div>
+
+    <script src="script.js?v=20251209"></script>
 </body>
 </html>

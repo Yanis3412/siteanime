@@ -5,6 +5,7 @@ let imageCache = {};
 let malInfoCache = {};
 let lastUpdateCheck = 0;
 let currentView = 'manga'; // 'manga' ou 'anime'
+let currentDetailIndex = null; // Index de l'élément affiché dans le panneau
 const API_URL = '/api/data';
 
 // Charger les données au démarrage
@@ -449,12 +450,17 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
     
     const card = document.createElement('div');
     card.className = `card ${isActive ? 'active' : ''}`;
+    card.onclick = (e) => {
+        // Ne pas ouvrir le panneau si on clique sur un bouton ou input
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        openDetailPanel(index);
+    };
     
     const iconHtml = cachedImage 
         ? `<img src="${cachedImage}" alt="${item.title}" onerror="this.parentElement.innerHTML='<div class=card-icon-fallback>${icon}</div>'">`
         : `<div class="card-icon-fallback">${icon}</div>`;
     
-    const favBtn = `<button class="btn-control" onclick="toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
     card.innerHTML = `
         <div class="card-icon" data-index="${index}">${iconHtml}</div>
         <div class="card-info">
@@ -467,7 +473,7 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
                 </div>
             </div>
         </div>
-        <div class="card-controls">
+        <div class="card-controls" onclick="event.stopPropagation()">
             <button class="btn-control" onclick="updateProgressWrapper(${index}, -1)">−</button>
             <span class="progress-count">
                 <input type="number" class="editable-value" value="${item.current}" 
@@ -479,7 +485,7 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
             </span>
             <button class="btn-control" onclick="updateProgressWrapper(${index}, 1)">+</button>
         </div>
-        <div class="card-actions">
+        <div class="card-actions" onclick="event.stopPropagation()">
             ${favBtn}
             <button class="refresh-item-btn" onclick="refreshItemWithSeasonsWrapper(${index})" title="Rafraîchir & chercher saisons">🔄</button>
             <button class="edit-btn" onclick="openEditModal(${index})">✏️</button>
@@ -974,3 +980,113 @@ function refreshItemWithSeasonsWrapper(index) {
 function saveEditWrapper() {
     saveEdit().catch(err => console.error('Erreur lors de la sauvegarde:', err));
 }
+
+// ============ PANNEAU DÉTAILS ============
+
+function openDetailPanel(index) {
+    currentDetailIndex = index;
+    const item = library[index];
+    if (!item) return;
+
+    const panel = document.getElementById('detailPanel');
+    const overlay = document.getElementById('detailOverlay');
+    
+    // Remplir les infos
+    document.getElementById('detailTitle').textContent = item.title;
+    
+    // Image
+    const cacheKey = `${item.title}-${item.type}`;
+    const imageUrl = imageCache[cacheKey] || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="280" fill="%23333"><rect width="200" height="280"/><text x="100" y="140" text-anchor="middle" fill="%23666" font-size="14">No Image</text></svg>';
+    document.getElementById('detailImage').src = imageUrl;
+    
+    // Type badge
+    const typeBadge = document.getElementById('detailType');
+    typeBadge.textContent = item.type === 'Anime' ? '📺 Anime' : '📖 Manga';
+    
+    // Status badge
+    const statusBadge = document.getElementById('detailStatus');
+    if (item.status === 'completed') {
+        statusBadge.textContent = 'Terminé';
+        statusBadge.classList.add('completed');
+    } else {
+        statusBadge.textContent = 'En cours';
+        statusBadge.classList.remove('completed');
+    }
+    
+    // Progress
+    const current = item.current || 0;
+    const total = item.total || '?';
+    const percent = item.total ? Math.round((current / item.total) * 100) : 0;
+    
+    document.getElementById('detailProgressCurrent').textContent = current;
+    document.getElementById('detailProgressTotal').textContent = total;
+    document.getElementById('detailProgressType').textContent = item.type === 'Anime' ? 'épisodes' : 'chapitres';
+    document.getElementById('detailProgressPercent').textContent = percent + '%';
+    document.getElementById('detailProgressFill').style.width = percent + '%';
+    document.getElementById('detailProgressInput').value = current;
+    
+    // Favori button
+    const favBtn = document.getElementById('detailFavBtn');
+    if (item.fav) {
+        favBtn.classList.add('active');
+        favBtn.innerHTML = '<span>⭐</span> Favori';
+    } else {
+        favBtn.classList.remove('active');
+        favBtn.innerHTML = '<span>☆</span> Ajouter aux favoris';
+    }
+    
+    // Afficher le panneau
+    panel.classList.add('active');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetailPanel() {
+    const panel = document.getElementById('detailPanel');
+    const overlay = document.getElementById('detailOverlay');
+    
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    currentDetailIndex = null;
+}
+
+async function detailUpdateProgress(change) {
+    if (currentDetailIndex === null) return;
+    await updateProgress(currentDetailIndex, change);
+    openDetailPanel(currentDetailIndex); // Refresh panel
+}
+
+function detailSetProgress(value) {
+    if (currentDetailIndex === null) return;
+    setProgress(currentDetailIndex, value).then(() => {
+        openDetailPanel(currentDetailIndex);
+    });
+}
+
+async function detailToggleFav() {
+    if (currentDetailIndex === null) return;
+    await toggleFav(currentDetailIndex);
+    openDetailPanel(currentDetailIndex);
+}
+
+function detailEdit() {
+    if (currentDetailIndex === null) return;
+    closeDetailPanel();
+    openEditModal(currentDetailIndex);
+}
+
+async function detailDelete() {
+    if (currentDetailIndex === null) return;
+    if (confirm('Supprimer cet élément ?')) {
+        closeDetailPanel();
+        await deleteItem(currentDetailIndex);
+    }
+}
+
+// Fermer le panneau avec Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeDetailPanel();
+    }
+});
