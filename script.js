@@ -464,7 +464,7 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
     const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
     
     // Note preview (truncated)
-    const notePreview = item.note ? `<div class="card-note-preview">📝 ${item.note.length > 50 ? item.note.substring(0, 50) + '...' : item.note}</div>` : '';
+    const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
     
     card.innerHTML = `
         <div class="card-icon" data-index="${index}">${iconHtml}</div>
