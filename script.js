@@ -952,6 +952,60 @@ function updateProgressWrapper(index, change) {
     updateProgress(index, change).catch(err => console.error('Erreur lors de la mise à jour:', err));
 }
 
+// Fonction pour tout mettre à jour
+async function refreshAll() {
+    const btn = document.querySelector('.refresh-all-btn');
+    if (!btn) return;
+    
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.innerHTML = '⏳ Mise à jour en cours...';
+    
+    let updated = 0;
+    let errors = 0;
+    
+    for (let i = 0; i < library.length; i++) {
+        const item = library[i];
+        btn.innerHTML = `⏳ ${i + 1}/${library.length}...`;
+        
+        try {
+            // Attendre pour éviter le rate limit de l'API
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            const info = await fetchMalInfo(item.title, item.type, item.malId);
+            if (info) {
+                library[i].malId = info.malId;
+                library[i].status = info.status;
+                if (info.total) {
+                    library[i].total = info.total;
+                }
+                if (info.imageUrl) {
+                    const cacheKey = `${item.title}-${item.type}`;
+                    imageCache[cacheKey] = info.imageUrl;
+                }
+                updated++;
+            }
+        } catch (error) {
+            console.error(`Erreur pour ${item.title}:`, error);
+            errors++;
+        }
+    }
+    
+    await saveData();
+    renderList();
+    
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = originalText;
+    
+    alert(`✅ Mise à jour terminée!\n${updated} éléments mis à jour${errors > 0 ? `\n${errors} erreurs` : ''}`);
+}
+
+function refreshAllWrapper() {
+    refreshAll().catch(err => console.error('Erreur lors de la mise à jour globale:', err));
+}
+
 function setProgressWrapper(index, value) {
     setProgress(index, value).catch(err => console.error('Erreur lors de la mise à jour:', err));
 }
