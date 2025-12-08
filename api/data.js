@@ -36,7 +36,8 @@ export default async function handler(req, res) {
 
         if (req.method === 'POST' || req.method === 'PUT') {
             // Sauvegarder dans Upstash Redis
-            await redis.set('anime-manga-data', req.body);
+            const bodyData = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+            await redis.set('anime-manga-data', bodyData);
             return res.status(200).json({ success: true, message: 'Data saved successfully' });
         }
 
