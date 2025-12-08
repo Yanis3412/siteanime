@@ -462,6 +462,10 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
         : `<div class="card-icon-fallback">${icon}</div>`;
     
     const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    
+    // Note preview (truncated)
+    const notePreview = item.note ? `<div class="card-note-preview">📝 ${item.note.length > 50 ? item.note.substring(0, 50) + '...' : item.note}</div>` : '';
+    
     card.innerHTML = `
         <div class="card-icon" data-index="${index}">${iconHtml}</div>
         <div class="card-info">
@@ -473,6 +477,7 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
                     <div class="progress-bar" style="width: ${percentage}%"></div>
                 </div>
             </div>
+            ${notePreview}
         </div>
         <div class="card-controls" onclick="event.stopPropagation()">
             <button class="btn-control" onclick="updateProgressWrapper(${index}, -1)">−</button>

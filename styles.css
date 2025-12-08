@@ -657,6 +657,21 @@ select {
     color: var(--text-muted);
 }
 
+.card-note-preview {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(157, 78, 221, 0.08);
+    border-left: 2px solid var(--secondary);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
 .card-type {
     background: rgba(157, 78, 221, 0.15);
     color: #c77dff;
