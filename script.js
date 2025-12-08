@@ -1265,6 +1265,7 @@ async function detailSaveNote(value) {
     if (currentDetailIndex === null) return;
     library[currentDetailIndex].note = value;
     await saveData();
+    renderList();
 }
 
 function detailEdit() {
