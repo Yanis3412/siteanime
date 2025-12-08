@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "anime-manga-list",
   "version": "1.0.0",
   "description": "Liste de suivi pour Mangas et Animes avec données persistantes",
