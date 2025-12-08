@@ -31,6 +31,7 @@ siteanime/
 ### Préalables
 - Compte GitHub
 - Compte Vercel (gratuit sur https://vercel.com)
+- Compte Upstash (gratuit sur https://upstash.com)
 
 ### Étapes de déploiement
 
@@ -51,31 +52,34 @@ siteanime/
    git push -u origin main
    ```
 
-3. **Déployer sur Vercel**
+3. **Créer une base de données Upstash Redis - IMPORTANT**
+   
+   a. Allez sur https://console.upstash.com/redis
+   
+   b. Cliquez sur **"Create Database"**
+   
+   c. Nommez-la : `anime-manga-db`
+   
+   d. Sélectionnez la région : `eu-west-1` (Europe)
+   
+   e. Cliquez **"Create"**
+   
+   f. Copiez l'URL et le token (vous en aurez besoin)
+
+4. **Déployer sur Vercel**
    - Allez sur https://vercel.com/import
    - Sélectionnez votre dépôt GitHub
-   - Cliquez sur "Deploy"
-
-4. **Configurer Vercel KV (Base de données) - IMPORTANT**
-   
-   Pour que les données soient partagées entre appareils :
-   
-   a. Dans votre projet Vercel, allez dans l'onglet **Storage**
-   
-   b. Cliquez sur **Create Database**
-   
-   c. Sélectionnez **KV (Key-Value Store)**
-   
-   d. Donnez un nom (ex: "anime-manga-db") et cliquez **Create**
-   
-   e. Vercel configurera automatiquement les variables d'environnement
-   
-   f. Redéployez votre projet (Vercel le fera automatiquement)
+   - Cliquez sur **"Deploy"**
+   - Une fois le déploiement terminé, allez dans **"Settings" > "Environment Variables"**
+   - Ajoutez deux variables :
+     - `UPSTASH_REDIS_REST_URL` = votre URL Upstash
+     - `UPSTASH_REDIS_REST_TOKEN` = votre token Upstash
+   - Cliquez sur **"Redeploy"**
 
 5. **C'est prêt !** 🎉
    - Vos données seront maintenant sauvegardées en ligne
    - Accessibles depuis n'importe quel appareil ou navigateur
-   - Limite gratuite : 100 000 requêtes/mois
+   - Plan gratuit Upstash : 10 000 commandes/jour
 
 ## Développement local
 

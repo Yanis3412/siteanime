@@ -1,4 +1,9 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 export default async function handler(req, res) {
     // Activer CORS
@@ -14,8 +19,8 @@ export default async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
-            // Lire depuis Vercel KV
-            const data = await kv.get('anime-manga-data');
+            // Lire depuis Upstash Redis
+            const data = await redis.get('anime-manga-data');
             
             if (!data) {
                 return res.status(200).json({
@@ -30,8 +35,8 @@ export default async function handler(req, res) {
         }
 
         if (req.method === 'POST' || req.method === 'PUT') {
-            // Sauvegarder dans Vercel KV
-            await kv.set('anime-manga-data', req.body);
+            // Sauvegarder dans Upstash Redis
+            await redis.set('anime-manga-data', req.body);
             return res.status(200).json({ success: true, message: 'Data saved successfully' });
         }
 
