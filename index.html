@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste Manga/Anime</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Liste Manga/Anime</h1>
+        </header>
+
+        <div class="add-form">
+            <div class="input-group" style="flex: 2;">
+                <label>Titre</label>
+                <input type="text" id="inputTitle" placeholder="Nom de l'Anime/Manga">
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <label>Type</label>
+                <select id="inputType">
+                    <option value="Anime">📺 Anime</option>
+                    <option value="Manga">📖 Manga</option>
+                </select>
+            </div>
+            <button class="add-btn" onclick="addItemWrapper()">+ Ajouter</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="view-toggle">
+                <button class="toggle-btn active" id="btnManga" onclick="showSection('manga')">
+                    <span class="icon">📖</span> Mangas
+                </button>
+                <button class="toggle-btn" id="btnAnime" onclick="showSection('anime')">
+                    <span class="icon">📺</span> Animes
+                </button>
+                <button class="toggle-btn" id="btnFav" onclick="showSection('fav')">
+                    <span class="icon">⭐</span> Favoris
+                </button>
+                <button class="toggle-btn" id="btnSites" onclick="showSection('sites')">
+                    <span class="icon">🌐</span> Sites
+                </button>
+            </div>
+            <div class="three-column-layout" id="sectionsLayout" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; align-items: start;">
+                <div class="content-section" id="sectionManga">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <span class="icon">📖</span> Mangas
+                        </div>
+                    </div>
+                    <div class="grid-container" id="mangaListContainer"></div>
+                </div>
+                <div class="content-section" id="sectionAnime" style="display:none;">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <span class="icon">📺</span> Animes
+                        </div>
+                    </div>
+                    <div class="grid-container" id="animeListContainer"></div>
+                </div>
+                <div class="content-section" id="sectionFav" style="display:none;">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <span class="icon">⭐</span> Favoris <span id="favCount">(0)</span>
+                        </div>
+                    </div>
+                    <div class="grid-container" id="favListContainer"></div>
+                </div>
+                <div class="content-section" id="sectionSites" style="display:none;">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <span class="icon">🌐</span> Sites
+                        </div>
+                    </div>
+                    <div class="grid-container" id="sitesListContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'édition -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3>✏️ Modifier</h3>
+            <div class="modal-input-group">
+                <label>Titre</label>
+                <input type="text" id="editTitle" placeholder="Nom de l'Anime/Manga">
+            </div>
+            <div class="modal-input-group">
+                <label>Type</label>
+                <select id="editType">
+                    <option value="Anime">📺 Anime</option>
+                    <option value="Manga">📖 Manga</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeEditModal()">Annuler</button>
+                <button class="modal-btn modal-btn-save" onclick="saveEditWrapper()">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

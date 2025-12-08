@@ -1,0 +1,9 @@
+{
+  "buildCommand": "echo 'Build completed'",
+  "outputDirectory": "public",
+  "functions": {
+    "api/data.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
