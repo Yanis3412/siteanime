@@ -73,6 +73,11 @@ function switchView(view) {
     renderList();
 }
 
+async function saveAndRender() {
+    await saveData();
+    renderList();
+}
+
 // Vérifie et met à jour les totaux au chargement (max 1 fois par heure)
 async function checkForUpdates() {
     const now = Date.now();
