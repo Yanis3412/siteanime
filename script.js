@@ -6,6 +6,7 @@ let malInfoCache = {};
 let lastUpdateCheck = 0;
 let currentView = 'manga'; // 'manga' ou 'anime'
 let currentDetailIndex = null; // Index de l'élément affiché dans le panneau
+let lastKnownTotals = {}; // Pour suivre les totaux connus (chapitres/épisodes)
 const API_URL = '/api/data';
 
 // Charger les données au démarrage
@@ -1004,6 +1005,127 @@ async function refreshAll() {
 
 function refreshAllWrapper() {
     refreshAll().catch(err => console.error('Erreur lors de la mise à jour globale:', err));
+}
+
+// Fonction pour vérifier les nouveaux chapitres/épisodes
+async function checkNewReleases() {
+    const btn = document.querySelector('.check-new-btn');
+    if (!btn) return;
+    
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.innerHTML = '⏳ Vérification...';
+    
+    const notifications = [];
+    
+    // Charger les totaux connus depuis le localStorage
+    const savedTotals = localStorage.getItem('lastKnownTotals');
+    if (savedTotals) {
+        lastKnownTotals = JSON.parse(savedTotals);
+    }
+    
+    for (let i = 0; i < library.length; i++) {
+        const item = library[i];
+        btn.innerHTML = `⏳ ${i + 1}/${library.length}...`;
+        
+        // Ne vérifier que les séries en cours
+        if (item.status === 'completed') continue;
+        
+        try {
+            // Attendre pour éviter le rate limit de l'API
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            const info = await fetchMalInfo(item.title, item.type, item.malId);
+            if (info && info.total) {
+                const key = item.malId || `${item.title}-${item.type}`;
+                const previousTotal = lastKnownTotals[key] || item.total;
+                
+                // Si le nouveau total est supérieur à ce qu'on connaissait
+                if (info.total > previousTotal) {
+                    const diff = info.total - previousTotal;
+                    const unit = item.type === 'Anime' ? 'épisode' : 'chapitre';
+                    const unitPlural = item.type === 'Anime' ? 'épisodes' : 'chapitres';
+                    
+                    notifications.push({
+                        title: item.title,
+                        type: item.type,
+                        message: diff === 1 
+                            ? `Le ${unit} ${info.total} est disponible !`
+                            : `${diff} nouveaux ${unitPlural} disponibles ! (jusqu'au ${info.total})`,
+                        newTotal: info.total,
+                        previousTotal: previousTotal,
+                        icon: item.type === 'Anime' ? '📺' : '📖'
+                    });
+                }
+                
+                // Mettre à jour le total connu
+                lastKnownTotals[key] = info.total;
+                
+                // Mettre à jour aussi dans la library si nécessaire
+                if (info.total !== item.total) {
+                    library[i].total = info.total;
+                }
+            }
+        } catch (error) {
+            console.error(`Erreur pour ${item.title}:`, error);
+        }
+    }
+    
+    // Sauvegarder les totaux connus
+    localStorage.setItem('lastKnownTotals', JSON.stringify(lastKnownTotals));
+    
+    // Sauvegarder les mises à jour de la library
+    await saveData();
+    renderList();
+    
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = originalText;
+    
+    // Afficher les notifications
+    showNotificationsPopup(notifications);
+}
+
+function showNotificationsPopup(notifications) {
+    const popup = document.getElementById('notificationsPopup');
+    const overlay = document.getElementById('notificationsOverlay');
+    const content = document.getElementById('notificationsContent');
+    
+    if (notifications.length === 0) {
+        content.innerHTML = `
+            <div class="notification-empty">
+                <div class="notification-empty-icon">✨</div>
+                <p>Aucune nouveauté pour le moment</p>
+                <p class="notification-empty-sub">Toutes tes séries sont à jour !</p>
+            </div>
+        `;
+    } else {
+        content.innerHTML = notifications.map(n => `
+            <div class="notification-item ${n.type.toLowerCase()}">
+                <div class="notification-icon">${n.icon}</div>
+                <div class="notification-info">
+                    <div class="notification-title">${n.title}</div>
+                    <div class="notification-message">${n.message}</div>
+                </div>
+                <div class="notification-badge">NEW</div>
+            </div>
+        `).join('');
+    }
+    
+    popup.classList.add('active');
+    overlay.classList.add('active');
+}
+
+function closeNotificationsPopup() {
+    const popup = document.getElementById('notificationsPopup');
+    const overlay = document.getElementById('notificationsOverlay');
+    popup.classList.remove('active');
+    overlay.classList.remove('active');
+}
+
+function checkNewReleasesWrapper() {
+    checkNewReleases().catch(err => console.error('Erreur lors de la vérification:', err));
 }
 
 function setProgressWrapper(index, value) {
