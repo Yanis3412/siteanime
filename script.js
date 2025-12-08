@@ -341,7 +341,7 @@ function renderList() {
     } else {
         mangas.forEach((item) => {
             const index = library.indexOf(item);
-            renderSimpleCard(mangaContainer, item, index, '📖', imageCache[`${item.title}-${item.type}`]);
+            renderHorizontalCard(mangaContainer, item, index, '📖', imageCache[`${item.title}-${item.type}`]);
         });
     }
 
@@ -360,7 +360,7 @@ function renderList() {
             if (item.seasons && item.seasons.length > 1) {
                 renderCardWithSeasons(animeContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`]);
             } else {
-                renderAnimeCard(animeContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`]);
+                renderHorizontalCard(animeContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`]);
             }
         });
     }
@@ -380,9 +380,9 @@ function renderList() {
             if (item.seasons && item.seasons.length > 1) {
                 renderCardWithSeasons(favContainer, item, index, item.type === 'Anime' ? '📺' : '📖', imageCache[`${item.title}-${item.type}`], true);
             } else if (item.type === 'Anime') {
-                renderAnimeCard(favContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`], true);
+                renderHorizontalCard(favContainer, item, index, '📺', imageCache[`${item.title}-${item.type}`], true);
             } else {
-                renderSimpleCard(favContainer, item, index, '📖', imageCache[`${item.title}-${item.type}`], true);
+                renderHorizontalCard(favContainer, item, index, '📖', imageCache[`${item.title}-${item.type}`], true);
             }
         });
     }
@@ -507,8 +507,8 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
     }
 }
 
-// Carte pour anime sans saisons (même style que avec saisons mais sans flèche)
-function renderAnimeCard(container, item, index, icon, cachedImage, isFavSection = false) {
+// Carte horizontale pour anime/manga (même style que avec saisons mais sans flèche)
+function renderHorizontalCard(container, item, index, icon, cachedImage, isFavSection = false) {
     const isActive = selectedIndex === index;
     const percentage = item.total ? Math.round((item.current / item.total) * 100) : 0;
     
@@ -527,7 +527,11 @@ function renderAnimeCard(container, item, index, icon, cachedImage, isFavSection
         : `<div class="card-icon-fallback">${icon}</div>`;
     
     const totalDisplay = item.total || '?';
+    const unitLabel = item.type === 'Anime' ? 'épisodes' : 'chapitres';
     const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    
+    // Note preview
+    const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
     
     cardGroup.innerHTML = `
         <div class="card-group-header" onclick="openDetailPanel(${index})">
@@ -536,12 +540,13 @@ function renderAnimeCard(container, item, index, icon, cachedImage, isFavSection
             <div class="card-info">
                 <h3 class="card-title">${item.title}</h3>
                 <div class="card-meta">
-                    <span class="card-type">Anime (${totalDisplay} épisodes)</span>
+                    <span class="card-type">${item.type} (${totalDisplay} ${unitLabel})</span>
                     ${statusBadge}
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${percentage}%"></div>
                     </div>
                 </div>
+                ${notePreview}
             </div>
             <div class="progress-count" style="margin-right: 10px;">
                 <strong>${item.current}</strong> / ${totalDisplay}
