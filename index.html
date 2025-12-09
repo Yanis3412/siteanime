@@ -21,6 +21,24 @@
         </div>
     </div>
 
+    <!-- Modal de déverrouillage de profil -->
+    <div class="modal-overlay" id="unlockProfileModal">
+        <div class="modal">
+            <h3 id="unlockProfileTitle">🔒 Déverrouiller le profil</h3>
+            <p id="unlockProfileName" style="color: var(--text-muted); margin-bottom: 20px;"></p>
+            <div class="modal-input-group">
+                <label>Mot de passe</label>
+                <input type="password" id="unlockPasswordInput" placeholder="******" maxlength="6" pattern="[0-9]*" inputmode="numeric" onkeypress="if(event.key==='Enter') attemptUnlock()">
+                <div id="unlockError" style="color: var(--primary); font-size: 0.85rem; margin-top: 8px;"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeUnlockModal()">Annuler</button>
+                <button class="modal-btn" onclick="spectatorMode()" style="background: rgba(157, 78, 221, 0.2); color: var(--accent);">👁️ Mode Spectateur</button>
+                <button class="modal-btn modal-btn-save" onclick="attemptUnlock()">Déverrouiller</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container" id="mainContainer" style="display: none;">
         <header>
             <h1>Liste Manga/Anime</h1>
@@ -81,24 +99,6 @@
                 <div class="modal-buttons">
                     <button class="modal-btn modal-btn-cancel" onclick="closeCreateProfileModal()">Annuler</button>
                     <button class="modal-btn modal-btn-save" onclick="confirmCreateProfile()">Créer</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de déverrouillage de profil -->
-        <div class="modal-overlay" id="unlockProfileModal">
-            <div class="modal">
-                <h3 id="unlockProfileTitle">🔒 Déverrouiller le profil</h3>
-                <p id="unlockProfileName" style="color: var(--text-muted); margin-bottom: 20px;"></p>
-                <div class="modal-input-group">
-                    <label>Mot de passe</label>
-                    <input type="password" id="unlockPasswordInput" placeholder="******" maxlength="6" pattern="[0-9]*" inputmode="numeric" onkeypress="if(event.key==='Enter') attemptUnlock()">
-                    <div id="unlockError" style="color: var(--primary); font-size: 0.85rem; margin-top: 8px;"></div>
-                </div>
-                <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-cancel" onclick="closeUnlockModal()">Annuler</button>
-                    <button class="modal-btn" onclick="spectatorMode()" style="background: rgba(157, 78, 221, 0.2); color: var(--accent);">👁️ Mode Spectateur</button>
-                    <button class="modal-btn modal-btn-save" onclick="attemptUnlock()">Déverrouiller</button>
                 </div>
             </div>
         </div>
