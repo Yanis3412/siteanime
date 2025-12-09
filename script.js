@@ -1313,10 +1313,10 @@ function openDetailPanel(index) {
     const favBtn = document.getElementById('detailFavBtn');
     if (item.fav) {
         favBtn.classList.add('active');
-        favBtn.innerHTML = '<span>⭐</span> Favori';
+        favBtn.innerHTML = '<span>📋</span> Dans la Watchlist';
     } else {
         favBtn.classList.remove('active');
-        favBtn.innerHTML = '<span>☆</span> Ajouter aux favoris';
+        favBtn.innerHTML = '<span>☐</span> Ajouter à la Watchlist';
     }
     
     // Afficher le panneau
