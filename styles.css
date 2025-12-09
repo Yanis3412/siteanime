@@ -352,8 +352,7 @@ header {
 
 /* Add Form */
 .add-form {
-    background: var(--glass);
-    backdrop-filter: blur(10px);
+    background: rgba(15, 10, 21, 0.95);
     border: 1px solid var(--border-color);
     padding: 25px;
     border-radius: 28px;
@@ -362,11 +361,14 @@ header {
     flex-wrap: wrap;
     align-items: flex-end;
     margin-bottom: 30px;
+    position: relative;
+    z-index: 100;
 }
 
 .input-group {
     flex: 1;
     min-width: 200px;
+    position: relative;
 }
 
 .input-group label {
