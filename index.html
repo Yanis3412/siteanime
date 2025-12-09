@@ -14,6 +14,22 @@
         <header>
             <h1>Liste Manga/Anime</h1>
             <div class="header-buttons">
+                <div class="profile-selector">
+                    <button class="profile-btn" onclick="toggleProfileMenu()" id="currentProfileBtn">
+                        <span class="profile-icon">👤</span>
+                        <span id="currentProfileName">Profil par défaut</span>
+                        <span class="profile-arrow">▼</span>
+                    </button>
+                    <div class="profile-menu" id="profileMenu">
+                        <div class="profile-menu-header">Mes Profils</div>
+                        <div class="profile-list" id="profileList">
+                            <!-- Les profils seront insérés ici -->
+                        </div>
+                        <button class="profile-menu-add" onclick="createNewProfile()">
+                            <span>+</span> Nouveau profil
+                        </button>
+                    </div>
+                </div>
                 <button class="refresh-all-btn" onclick="refreshAllWrapper()" title="Mettre à jour toutes les infos">
                     🔄 Tout mettre à jour
                 </button>
@@ -22,6 +38,21 @@
                 </button>
             </div>
         </header>
+
+        <!-- Modal de gestion de profil -->
+        <div class="modal-overlay" id="profileModal">
+            <div class="modal">
+                <h3>✏️ Renommer le profil</h3>
+                <div class="modal-input-group">
+                    <label>Nom du profil</label>
+                    <input type="text" id="profileNameInput" placeholder="Mon profil">
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn modal-btn-cancel" onclick="closeProfileModal()">Annuler</button>
+                    <button class="modal-btn modal-btn-save" onclick="saveProfileName()">Sauvegarder</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Popup de notifications -->
         <div class="notifications-popup" id="notificationsPopup">

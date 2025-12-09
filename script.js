@@ -7,36 +7,198 @@ let lastUpdateCheck = 0;
 let currentView = 'manga'; // 'manga' ou 'anime'
 let currentDetailIndex = null; // Index de l'élément affiché dans le panneau
 let lastKnownTotals = {}; // Pour suivre les totaux connus (chapitres/épisodes)
+let currentProfile = 'default'; // Profil actuel
+let profiles = {}; // Tous les profils
+let editingProfileId = null; // ID du profil en cours d'édition
 const API_URL = '/api/data';
+
+// Charger les profils
+function loadProfiles() {
+    const savedProfiles = localStorage.getItem('animeProfiles');
+    if (savedProfiles) {
+        profiles = JSON.parse(savedProfiles);
+    } else {
+        // Créer le profil par défaut
+        profiles = {
+            'default': {
+                id: 'default',
+                name: 'Profil par défaut',
+                library: [],
+                imageCache: {},
+                malInfoCache: {},
+                lastUpdateCheck: 0,
+                lastKnownTotals: {}
+            }
+        };
+    }
+    
+    // Charger le dernier profil utilisé
+    const lastProfile = localStorage.getItem('currentProfile');
+    if (lastProfile && profiles[lastProfile]) {
+        currentProfile = lastProfile;
+    } else {
+        currentProfile = 'default';
+    }
+    
+    loadCurrentProfile();
+}
+
+// Charger le profil actuel
+function loadCurrentProfile() {
+    const profile = profiles[currentProfile];
+    if (profile) {
+        library = profile.library || [];
+        imageCache = profile.imageCache || {};
+        malInfoCache = profile.malInfoCache || {};
+        lastUpdateCheck = profile.lastUpdateCheck || 0;
+        lastKnownTotals = profile.lastKnownTotals || {};
+        
+        document.getElementById('currentProfileName').textContent = profile.name;
+    }
+    renderProfileList();
+}
+
+// Sauvegarder les profils
+function saveProfiles() {
+    // Sauvegarder les données du profil actuel
+    profiles[currentProfile] = {
+        ...profiles[currentProfile],
+        library,
+        imageCache,
+        malInfoCache,
+        lastUpdateCheck,
+        lastKnownTotals
+    };
+    
+    localStorage.setItem('animeProfiles', JSON.stringify(profiles));
+    localStorage.setItem('currentProfile', currentProfile);
+}
+
+// Changer de profil
+function switchProfile(profileId) {
+    if (profiles[profileId]) {
+        // Sauvegarder le profil actuel avant de changer
+        saveProfiles();
+        
+        currentProfile = profileId;
+        loadCurrentProfile();
+        renderList();
+        toggleProfileMenu();
+    }
+}
+
+// Créer un nouveau profil
+function createNewProfile() {
+    const profileId = 'profile_' + Date.now();
+    const profileName = `Profil ${Object.keys(profiles).length}`;
+    
+    profiles[profileId] = {
+        id: profileId,
+        name: profileName,
+        library: [],
+        imageCache: {},
+        malInfoCache: {},
+        lastUpdateCheck: 0,
+        lastKnownTotals: {}
+    };
+    
+    saveProfiles();
+    switchProfile(profileId);
+}
+
+// Renommer un profil
+function renameProfile(profileId) {
+    editingProfileId = profileId;
+    const profile = profiles[profileId];
+    document.getElementById('profileNameInput').value = profile.name;
+    document.getElementById('profileModal').classList.add('active');
+}
+
+// Sauvegarder le nom du profil
+function saveProfileName() {
+    const newName = document.getElementById('profileNameInput').value.trim();
+    if (newName && editingProfileId) {
+        profiles[editingProfileId].name = newName;
+        if (editingProfileId === currentProfile) {
+            document.getElementById('currentProfileName').textContent = newName;
+        }
+        saveProfiles();
+        renderProfileList();
+    }
+    closeProfileModal();
+}
+
+// Supprimer un profil
+function deleteProfile(profileId) {
+    if (profileId === 'default') {
+        alert('Impossible de supprimer le profil par défaut');
+        return;
+    }
+    
+    if (confirm('Supprimer ce profil et toutes ses données ?')) {
+        delete profiles[profileId];
+        
+        // Si c'est le profil actuel, revenir au défaut
+        if (currentProfile === profileId) {
+            currentProfile = 'default';
+            loadCurrentProfile();
+            renderList();
+        }
+        
+        saveProfiles();
+        renderProfileList();
+    }
+}
+
+// Afficher la liste des profils
+function renderProfileList() {
+    const profileList = document.getElementById('profileList');
+    profileList.innerHTML = Object.values(profiles).map(profile => `
+        <div class="profile-item ${profile.id === currentProfile ? 'active' : ''}" onclick="switchProfile('${profile.id}')">
+            <div class="profile-item-info">
+                <span class="profile-item-name">${profile.name}</span>
+                <span class="profile-item-count">${profile.library?.length || 0} éléments</span>
+            </div>
+            <div class="profile-item-actions" onclick="event.stopPropagation()">
+                <button class="profile-item-btn" onclick="renameProfile('${profile.id}')" title="Renommer">✏️</button>
+                ${profile.id !== 'default' ? `<button class="profile-item-btn delete" onclick="deleteProfile('${profile.id}')" title="Supprimer">🗑️</button>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Toggle menu profil
+function toggleProfileMenu() {
+    const menu = document.getElementById('profileMenu');
+    menu.classList.toggle('active');
+}
+
+// Fermer menu profil
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.remove('active');
+    editingProfileId = null;
+}
+
+// Fermer le menu si on clique ailleurs
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('profileMenu');
+    const btn = document.getElementById('currentProfileBtn');
+    if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.remove('active');
+    }
+});
 
 // Charger les données au démarrage
 async function loadData() {
-    try {
-        const response = await fetch(API_URL);
-        if (response.ok) {
-            const data = await response.json();
-            library = data.library || [];
-            imageCache = data.imageCache || {};
-            malInfoCache = data.malInfoCache || {};
-            lastUpdateCheck = data.lastUpdateCheck || 0;
-            console.log('✅ Données chargées depuis le serveur');
-        } else {
-            throw new Error('Erreur de chargement');
-        }
-    } catch (error) {
-        console.error('⚠️ Erreur lors du chargement, utilisation du localStorage:', error);
-        // Fallback au localStorage en cas d'erreur
-        library = JSON.parse(localStorage.getItem('viegoList')) || [];
-        imageCache = JSON.parse(localStorage.getItem('imageCache')) || {};
-        malInfoCache = JSON.parse(localStorage.getItem('malInfoCache')) || {};
-        lastUpdateCheck = parseInt(localStorage.getItem('lastUpdateCheck')) || 0;
-    }
+    loadProfiles();
     renderList();
     checkForUpdates();
 }
 
 // Sauvegarder les données
 async function saveData() {
+    saveProfiles();
+    
     try {
         const data = {
             library,
