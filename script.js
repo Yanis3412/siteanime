@@ -790,23 +790,36 @@ async function addItem() {
         return;
     }
 
+    // Utiliser les infos de l'auto-complétion si disponibles
+    const useAutocomplete = selectedAutocompleteItem && 
+                           selectedAutocompleteItem.title === titleInput.value &&
+                           selectedAutocompleteItem.type === typeInput.value;
+
     const newItem = {
         title: titleInput.value,
         type: typeInput.value,
         current: 0,
-        total: null,
-        malId: null,
-        status: 'unknown'
+        total: useAutocomplete ? selectedAutocompleteItem.total : null,
+        malId: useAutocomplete ? selectedAutocompleteItem.malId : null,
+        status: useAutocomplete ? selectedAutocompleteItem.status : 'unknown'
     };
+
+    // Si on a l'image de l'auto-complétion, la mettre en cache tout de suite
+    if (useAutocomplete && selectedAutocompleteItem.imageUrl) {
+        const cacheKey = `${newItem.title}-${newItem.type}`;
+        imageCache[cacheKey] = selectedAutocompleteItem.imageUrl;
+    }
 
     library.push(newItem);
     const newIndex = library.length - 1;
     await saveAndRender();
     titleInput.value = '';
+    hideAutocomplete();
     
     try {
         if (newItem.type === 'Anime') {
-            const info = await fetchAnimeWithSeasons(newItem.title, newItem.type);
+            // Si on a déjà l'ID MAL via auto-complétion, on peut chercher les saisons directement
+            const info = await fetchAnimeWithSeasons(newItem.title, newItem.type, useAutocomplete ? selectedAutocompleteItem.malId : null);
             if (info) {
                 library[newIndex].malId = info.malId;
                 library[newIndex].status = info.status;
@@ -828,24 +841,30 @@ async function addItem() {
                 await saveAndRender();
             }
         } else {
-            const info = await fetchMalInfo(newItem.title, newItem.type);
-            if (info) {
-                library[newIndex].malId = info.malId;
-                library[newIndex].status = info.status;
-                library[newIndex].total = info.total || null;
-                
-                if (info.imageUrl) {
-                    const cacheKey = `${newItem.title}-${newItem.type}`;
-                    imageCache[cacheKey] = info.imageUrl;
-                    localStorage.setItem('imageCache', JSON.stringify(imageCache));
+            // Pour les mangas, on récupère les infos si pas d'auto-complétion
+            if (!useAutocomplete) {
+                const info = await fetchMalInfo(newItem.title, newItem.type);
+                if (info) {
+                    library[newIndex].malId = info.malId;
+                    library[newIndex].status = info.status;
+                    library[newIndex].total = info.total || null;
+                    
+                    if (info.imageUrl) {
+                        const cacheKey = `${newItem.title}-${newItem.type}`;
+                        imageCache[cacheKey] = info.imageUrl;
+                        localStorage.setItem('imageCache', JSON.stringify(imageCache));
+                    }
+                    
+                    await saveAndRender();
                 }
-                
-                await saveAndRender();
             }
         }
     } catch (error) {
         console.error('Error fetching MAL info:', error);
     }
+    
+    // Réinitialiser la sélection auto-complétion
+    selectedAutocompleteItem = null;
 }
 
 async function updateProgress(index, change) {
@@ -1350,5 +1369,174 @@ async function detailDelete() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeDetailPanel();
+        hideAutocomplete();
     }
+});
+
+// ==================== AUTO-COMPLÉTION ====================
+
+let autocompleteTimeout = null;
+let selectedAutocompleteItem = null;
+
+function initAutocomplete() {
+    const inputTitle = document.getElementById('inputTitle');
+    const inputType = document.getElementById('inputType');
+    const autocompleteContainer = document.getElementById('autocompleteContainer');
+    
+    if (!inputTitle || !autocompleteContainer) return;
+    
+    // Recherche à la saisie
+    inputTitle.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        // Annuler la recherche précédente
+        if (autocompleteTimeout) {
+            clearTimeout(autocompleteTimeout);
+        }
+        
+        if (query.length < 2) {
+            hideAutocomplete();
+            return;
+        }
+        
+        // Attendre 400ms avant de lancer la recherche (debounce)
+        autocompleteTimeout = setTimeout(() => {
+            searchAutocomplete(query, inputType.value);
+        }, 400);
+    });
+    
+    // Fermer quand on clique ailleurs
+    document.addEventListener('click', (e) => {
+        if (!inputTitle.contains(e.target) && !autocompleteContainer.contains(e.target)) {
+            hideAutocomplete();
+        }
+    });
+    
+    // Navigation au clavier
+    inputTitle.addEventListener('keydown', (e) => {
+        const items = autocompleteContainer.querySelectorAll('.autocomplete-item');
+        if (items.length === 0) return;
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            navigateAutocomplete(items, 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateAutocomplete(items, -1);
+        } else if (e.key === 'Enter') {
+            const activeItem = autocompleteContainer.querySelector('.autocomplete-item.active');
+            if (activeItem) {
+                e.preventDefault();
+                activeItem.click();
+            }
+        }
+    });
+    
+    // Relancer la recherche quand on change le type
+    inputType.addEventListener('change', () => {
+        const query = inputTitle.value.trim();
+        if (query.length >= 2) {
+            searchAutocomplete(query, inputType.value);
+        }
+    });
+}
+
+async function searchAutocomplete(query, type) {
+    const autocompleteContainer = document.getElementById('autocompleteContainer');
+    
+    // Afficher le chargement
+    autocompleteContainer.innerHTML = '<div class="autocomplete-loading">🔍 Recherche...</div>';
+    autocompleteContainer.classList.add('show');
+    
+    try {
+        const searchType = type === 'Anime' ? 'anime' : 'manga';
+        const response = await fetch(`https://api.jikan.moe/v4/${searchType}?q=${encodeURIComponent(query)}&limit=8`);
+        const data = await response.json();
+        
+        if (!data.data || data.data.length === 0) {
+            autocompleteContainer.innerHTML = '<div class="autocomplete-empty">Aucun résultat trouvé</div>';
+            return;
+        }
+        
+        autocompleteContainer.innerHTML = '';
+        
+        data.data.forEach((item) => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            
+            const total = type === 'Anime' ? item.episodes : item.chapters;
+            const totalText = total ? `${total} ${type === 'Anime' ? 'épisodes' : 'chapitres'}` : 'En cours';
+            const year = item.aired?.from ? new Date(item.aired.from).getFullYear() : 
+                        (item.published?.from ? new Date(item.published.from).getFullYear() : '');
+            
+            div.innerHTML = `
+                <img src="${item.images.jpg.small_image_url || item.images.jpg.image_url}" alt="${item.title}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 56%22><rect fill=%22%23333%22 width=%2240%22 height=%2256%22/></svg>'">
+                <div class="autocomplete-item-info">
+                    <div class="autocomplete-item-title">${item.title}</div>
+                    <div class="autocomplete-item-meta">${year ? year + ' • ' : ''}${totalText}</div>
+                </div>
+            `;
+            
+            div.addEventListener('click', () => {
+                selectAutocompleteItem(item, type);
+            });
+            
+            autocompleteContainer.appendChild(div);
+        });
+        
+    } catch (error) {
+        console.error('Erreur auto-complétion:', error);
+        autocompleteContainer.innerHTML = '<div class="autocomplete-empty">Erreur de recherche</div>';
+    }
+}
+
+function navigateAutocomplete(items, direction) {
+    const currentActive = document.querySelector('.autocomplete-item.active');
+    let newIndex = 0;
+    
+    if (currentActive) {
+        currentActive.classList.remove('active');
+        const currentIndex = Array.from(items).indexOf(currentActive);
+        newIndex = currentIndex + direction;
+        
+        if (newIndex < 0) newIndex = items.length - 1;
+        if (newIndex >= items.length) newIndex = 0;
+    } else {
+        newIndex = direction === 1 ? 0 : items.length - 1;
+    }
+    
+    items[newIndex].classList.add('active');
+    items[newIndex].scrollIntoView({ block: 'nearest' });
+}
+
+function selectAutocompleteItem(item, type) {
+    const inputTitle = document.getElementById('inputTitle');
+    inputTitle.value = item.title;
+    
+    // Stocker les infos MAL pour un ajout plus rapide
+    selectedAutocompleteItem = {
+        malId: item.mal_id,
+        title: item.title,
+        type: type,
+        imageUrl: item.images.jpg.large_image_url || item.images.jpg.image_url,
+        total: type === 'Anime' ? item.episodes : item.chapters,
+        status: (item.status === 'Currently Airing' || item.status === 'Publishing') ? 'ongoing' : 'completed'
+    };
+    
+    hideAutocomplete();
+    inputTitle.focus();
+}
+
+function hideAutocomplete() {
+    const autocompleteContainer = document.getElementById('autocompleteContainer');
+    if (autocompleteContainer) {
+        autocompleteContainer.classList.remove('show');
+        autocompleteContainer.innerHTML = '';
+    }
+    selectedAutocompleteItem = null;
+}
+
+// Initialiser l'auto-complétion au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    initAutocomplete();
 });

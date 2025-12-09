@@ -36,9 +36,10 @@
         <div class="notifications-overlay" id="notificationsOverlay" onclick="closeNotificationsPopup()"></div>
 
         <div class="add-form">
-            <div class="input-group" style="flex: 2;">
+            <div class="input-group" style="flex: 2; position: relative;">
                 <label>Titre</label>
-                <input type="text" id="inputTitle" placeholder="Nom de l'Anime/Manga">
+                <input type="text" id="inputTitle" placeholder="Nom de l'Anime/Manga" autocomplete="off">
+                <div class="autocomplete-container" id="autocompleteContainer"></div>
             </div>
             <div class="input-group" style="flex: 1;">
                 <label>Type</label>
