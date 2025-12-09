@@ -155,6 +155,14 @@ function selectProfileFromScreen(profileId) {
     if (profile.password) {
         console.log('Profil avec mot de passe, ouverture du modal...');
         pendingProfileSwitch = profileId;
+        
+        // Rendre l'écran de sélection semi-transparent
+        const selectionScreen = document.getElementById('profileSelectionScreen');
+        if (selectionScreen) {
+            selectionScreen.style.opacity = '0.3';
+            selectionScreen.style.pointerEvents = 'none';
+        }
+        
         const modal = document.getElementById('unlockProfileModal');
         console.log('Modal trouvé:', modal);
         if (modal) {
@@ -163,6 +171,11 @@ function selectProfileFromScreen(profileId) {
         }
         document.getElementById('unlockPasswordInput').value = '';
         document.getElementById('unlockError').textContent = '';
+        
+        // Focus sur l'input de mot de passe
+        setTimeout(() => {
+            document.getElementById('unlockPasswordInput').focus();
+        }, 100);
     } else {
         console.log('Profil sans mot de passe, chargement direct...');
         // Pas de mot de passe, charger directement
@@ -385,6 +398,13 @@ function spectatorMode() {
 function closeUnlockModal() {
     document.getElementById('unlockProfileModal').classList.remove('active');
     pendingProfileSwitch = null;
+    
+    // Restaurer l'écran de sélection si on n'a pas switch de profil
+    const selectionScreen = document.getElementById('profileSelectionScreen');
+    if (selectionScreen && selectionScreen.style.display !== 'none') {
+        selectionScreen.style.opacity = '1';
+        selectionScreen.style.pointerEvents = 'auto';
+    }
 }
 
 // Exporter les profils
