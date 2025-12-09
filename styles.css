@@ -1534,6 +1534,13 @@ select {
     color: var(--text-main);
     font-size: 1.1rem;
     font-family: 'Outfit', sans-serif;
+    -moz-appearance: textfield;
+}
+
+.detail-progress-input::-webkit-outer-spin-button,
+.detail-progress-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .detail-progress-input:focus {
