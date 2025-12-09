@@ -1331,21 +1331,29 @@ function getNextWeekday(targetDay) {
     return nextDate;
 }
 
-// Formater une date
-function formatDate(date) {
+// Formater une date avec heure
+function formatDate(date, includeTime = true) {
     if (!date) return 'Date inconnue';
     
     const now = new Date();
     const diff = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
     
-    const options = { weekday: 'long', day: 'numeric', month: 'long' };
-    const dateStr = date.toLocaleDateString('fr-FR', options);
+    const dateOptions = { weekday: 'long', day: 'numeric', month: 'long' };
+    const dateStr = date.toLocaleDateString('fr-FR', dateOptions);
     
-    if (diff === 0) return "Aujourd'hui";
-    if (diff === 1) return "Demain";
-    if (diff < 7) return `${dateStr} (dans ${diff} jours)`;
+    // Formater l'heure
+    let timeStr = '';
+    if (includeTime && (date.getHours() !== 0 || date.getMinutes() !== 0)) {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        timeStr = ` à ${hours}h${minutes}`;
+    }
     
-    return dateStr;
+    if (diff === 0) return `Aujourd'hui${timeStr}`;
+    if (diff === 1) return `Demain${timeStr}`;
+    if (diff < 7) return `${dateStr}${timeStr} (dans ${diff} jours)`;
+    
+    return `${dateStr}${timeStr}`;
 }
 
 function showNotificationsPopup(notifications, upcomingReleases = []) {
