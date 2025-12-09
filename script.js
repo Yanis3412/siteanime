@@ -86,15 +86,82 @@ function loadProfiles() {
     // Essayer de charger depuis le cloud
     loadProfilesFromCloud().catch(err => console.error('Erreur chargement cloud:', err));
     
-    // Charger le dernier profil utilisé
-    const lastProfile = localStorage.getItem('currentProfile');
-    if (lastProfile && profiles[lastProfile]) {
-        currentProfile = lastProfile;
-    } else {
-        currentProfile = 'default';
-    }
+    // Ne pas charger automatiquement un profil, afficher l'écran de sélection
+    showProfileSelectionScreen();
+}
+
+// Afficher l'écran de sélection de profil
+function showProfileSelectionScreen() {
+    const grid = document.getElementById('profileSelectionGrid');
+    const screen = document.getElementById('profileSelectionScreen');
+    const mainContainer = document.getElementById('mainContainer');
     
-    loadCurrentProfile();
+    screen.style.display = 'flex';
+    mainContainer.style.display = 'none';
+    
+    grid.innerHTML = Object.values(profiles).map(profile => {
+        const itemCount = profile.library?.length || 0;
+        const adminBadge = profile.isAdmin ? '<div class="profile-selection-badge">ADMIN</div>' : '';
+        
+        return `
+            <div class="profile-selection-card" onclick="selectProfileFromScreen('${profile.id}')">
+                ${adminBadge}
+                <div class="profile-selection-card-content">
+                    <div class="profile-selection-icon">👤</div>
+                    <div class="profile-selection-name">${profile.name}</div>
+                    <div class="profile-selection-count">${itemCount} élément${itemCount > 1 ? 's' : ''}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Ajouter une carte pour créer un nouveau profil
+    grid.innerHTML += `
+        <div class="profile-selection-card" onclick="createNewProfileFromScreen()">
+            <div class="profile-selection-card-content">
+                <div class="profile-selection-icon">➕</div>
+                <div class="profile-selection-name">Nouveau profil</div>
+                <div class="profile-selection-count">Créer</div>
+            </div>
+        </div>
+    `;
+}
+
+// Sélectionner un profil depuis l'écran de sélection
+function selectProfileFromScreen(profileId) {
+    const profile = profiles[profileId];
+    
+    // Si le profil a un mot de passe, demander de le déverrouiller
+    if (profile.password) {
+        pendingProfileSwitch = profileId;
+        document.getElementById('unlockProfileModal').classList.add('active');
+        document.getElementById('unlockPasswordInput').value = '';
+        document.getElementById('unlockError').textContent = '';
+    } else {
+        // Pas de mot de passe, charger directement
+        currentProfile = profileId;
+        isSpectatorMode = false;
+        isAdminMode = profile.isAdmin || false;
+        loadCurrentProfile();
+        hideProfileSelectionScreen();
+    }
+}
+
+// Créer un nouveau profil depuis l'écran de sélection
+function createNewProfileFromScreen() {
+    createNewProfile();
+}
+
+// Cacher l'écran de sélection et afficher l'application
+function hideProfileSelectionScreen() {
+    const screen = document.getElementById('profileSelectionScreen');
+    const mainContainer = document.getElementById('mainContainer');
+    
+    screen.style.display = 'none';
+    mainContainer.style.display = 'block';
+    
+    renderList();
+    checkForUpdates();
 }
 
 // Charger le profil actuel
@@ -249,7 +316,7 @@ function confirmCreateProfile() {
     isSpectatorMode = false;
     isAdminMode = false;
     loadCurrentProfile();
-    renderList();
+    hideProfileSelectionScreen();
 }
 
 // Fermer le modal de création
@@ -265,13 +332,12 @@ function attemptUnlock() {
     
     if (password === profile.password) {
         // Mot de passe correct
-        saveProfiles();
         currentProfile = pendingProfileSwitch;
         isSpectatorMode = false;
         isAdminMode = profile.isAdmin || false;
         loadCurrentProfile();
-        renderList();
         closeUnlockModal();
+        hideProfileSelectionScreen();
     } else {
         // Mot de passe incorrect
         errorDiv.textContent = 'Mot de passe incorrect';
@@ -280,13 +346,12 @@ function attemptUnlock() {
 
 // Mode spectateur
 function spectatorMode() {
-    saveProfiles();
     currentProfile = pendingProfileSwitch;
     isSpectatorMode = true;
     isAdminMode = false;
     loadCurrentProfile();
-    renderList();
     closeUnlockModal();
+    hideProfileSelectionScreen();
 }
 
 // Fermer le modal de déverrouillage
@@ -1754,8 +1819,8 @@ function showSection(section) {
 // Affiche la section "Mangas" au démarrage
 showSection('manga');
 
-// Charger les données au démarrage du site
-loadData();
+// Charger les profils au démarrage (affiche l'écran de sélection)
+loadProfiles();
 
 // Wrappers pour les appels onclick (qui ne peuvent pas être async)
 function addItemWrapper() {
