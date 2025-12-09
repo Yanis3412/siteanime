@@ -323,11 +323,13 @@ function renderList() {
     favContainer.innerHTML = '';
     sitesContainer.innerHTML = '';
 
-    const animes = library.filter(item => item.type === 'Anime').sort((a, b) => a.title.localeCompare(b.title));
-    const mangas = library.filter(item => item.type === 'Manga').sort((a, b) => a.title.localeCompare(b.title));
-    const favs = library.filter(item => item.fav === true);
+    // Watchlist = éléments avec fav === true (exclus des sections manga/anime)
+    const watchlist = library.filter(item => item.fav === true);
+    // Mangas et Animes excluent les éléments de la watchlist
+    const animes = library.filter(item => item.type === 'Anime' && !item.fav).sort((a, b) => a.title.localeCompare(b.title));
+    const mangas = library.filter(item => item.type === 'Manga' && !item.fav).sort((a, b) => a.title.localeCompare(b.title));
 
-    favCount.textContent = `(${favs.length})`;
+    favCount.textContent = `(${watchlist.length})`;
 
     // Mangas
     if (mangas.length === 0) {
@@ -365,17 +367,17 @@ function renderList() {
         });
     }
 
-    // Favoris
-    if (favs.length === 0) {
+    // Watchlist
+    if (watchlist.length === 0) {
         favContainer.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">⭐</div>
-                <p class="empty-state-text">Aucun favori</p>
-                <p class="empty-state-subtext">Clique sur l'étoile pour ajouter un favori !</p>
+                <div class="empty-state-icon">📋</div>
+                <p class="empty-state-text">Watchlist vide</p>
+                <p class="empty-state-subtext">Ajoute des animes/mangas à regarder plus tard !</p>
             </div>
         `;
     } else {
-        favs.forEach((item) => {
+        watchlist.forEach((item) => {
             const index = library.indexOf(item);
             if (item.seasons && item.seasons.length > 1) {
                 renderCardWithSeasons(favContainer, item, index, item.type === 'Anime' ? '📺' : '📖', imageCache[`${item.title}-${item.type}`], true);
