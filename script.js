@@ -94,9 +94,6 @@ function loadProfiles() {
 
 // Afficher l'écran de sélection de profil
 function showProfileSelectionScreen() {
-    console.log('showProfileSelectionScreen appelée');
-    console.log('Profils disponibles:', profiles);
-    
     const grid = document.getElementById('profileSelectionGrid');
     const screen = document.getElementById('profileSelectionScreen');
     const mainContainer = document.getElementById('mainContainer');
@@ -110,8 +107,6 @@ function showProfileSelectionScreen() {
     mainContainer.style.display = 'none';
     
     grid.innerHTML = '';
-    
-    console.log('Création des cartes de profil...');
     
     // Ajouter chaque profil
     Object.values(profiles).forEach(profile => {
@@ -129,7 +124,6 @@ function showProfileSelectionScreen() {
         `;
         
         card.addEventListener('click', () => {
-            console.log('Clic sur profil:', profile.id, profile.name);
             selectProfileFromScreen(profile.id);
         });
         grid.appendChild(card);
@@ -146,12 +140,9 @@ function showProfileSelectionScreen() {
         </div>
     `;
     newProfileCard.addEventListener('click', () => {
-        console.log('Clic sur nouveau profil');
         createNewProfileFromScreen();
     });
     grid.appendChild(newProfileCard);
-    
-    console.log('Cartes créées, total:', grid.children.length);
 }
 
 // Sélectionner un profil depuis l'écran de sélection
