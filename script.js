@@ -54,6 +54,9 @@ function loadProfiles() {
         localStorage.setItem('animeProfiles', JSON.stringify(profiles));
     }
     
+    // Essayer de charger depuis le cloud
+    loadProfilesFromCloud().catch(err => console.error('Erreur chargement cloud:', err));
+    
     // Charger le dernier profil utilisé
     const lastProfile = localStorage.getItem('currentProfile');
     if (lastProfile && profiles[lastProfile]) {
@@ -142,6 +145,9 @@ function saveProfiles() {
     
     localStorage.setItem('animeProfiles', JSON.stringify(profiles));
     localStorage.setItem('currentProfile', currentProfile);
+    
+    // Sauvegarder aussi dans Redis pour la synchronisation
+    saveProfilesToCloud().catch(err => console.error('Erreur sync cloud:', err));
 }
 
 // Changer de profil
@@ -451,6 +457,56 @@ async function saveData() {
         localStorage.setItem('imageCache', JSON.stringify(imageCache));
         localStorage.setItem('malInfoCache', JSON.stringify(malInfoCache));
         localStorage.setItem('lastUpdateCheck', lastUpdateCheck.toString());
+    }
+}
+
+// Sauvegarder les profils dans le cloud
+async function saveProfilesToCloud() {
+    try {
+        const response = await fetch('/api/profiles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ profiles })
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de la sauvegarde des profils');
+        }
+
+        console.log('✅ Profils sauvegardés dans le cloud');
+    } catch (error) {
+        console.error('⚠️ Erreur lors de la sauvegarde des profils dans le cloud:', error);
+    }
+}
+
+// Charger les profils depuis le cloud
+async function loadProfilesFromCloud() {
+    try {
+        const response = await fetch('/api/profiles');
+        
+        if (!response.ok) {
+            console.log('Pas de profils dans le cloud, utilisation des profils locaux');
+            return;
+        }
+
+        const data = await response.json();
+        
+        if (data.profiles && Object.keys(data.profiles).length > 0) {
+            // Fusionner avec les profils locaux (le cloud a la priorité)
+            profiles = { ...profiles, ...data.profiles };
+            localStorage.setItem('animeProfiles', JSON.stringify(profiles));
+            console.log('✅ Profils chargés depuis le cloud');
+            
+            // Recharger le profil actuel si nécessaire
+            if (profiles[currentProfile]) {
+                loadCurrentProfile();
+                renderList();
+            }
+        }
+    } catch (error) {
+        console.error('⚠️ Erreur lors du chargement des profils depuis le cloud:', error);
     }
 }
 
