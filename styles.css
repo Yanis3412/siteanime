@@ -427,15 +427,15 @@ select {
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
+    background: #1a1225;
+    border: 1px solid rgba(157, 78, 221, 0.3);
     border-radius: 12px;
     max-height: 300px;
     overflow-y: auto;
     overflow-x: hidden;
     z-index: 9999;
     display: none;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
     margin-top: 4px;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
@@ -456,8 +456,8 @@ select {
     padding: 10px 14px;
     cursor: pointer;
     transition: background 0.2s ease;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-secondary);
+    border-bottom: 1px solid rgba(157, 78, 221, 0.15);
+    background: #1a1225;
 }
 
 .autocomplete-item:last-child {
@@ -466,7 +466,7 @@ select {
 
 .autocomplete-item:hover,
 .autocomplete-item.active {
-    background: rgba(157, 77, 221, 0.3);
+    background: #2a1d3d;
 }
 
 .autocomplete-item img {
@@ -484,7 +484,7 @@ select {
 
 .autocomplete-item-title {
     font-weight: 600;
-    color: var(--text);
+    color: #f8f0fc;
     font-size: 0.95rem;
     white-space: nowrap;
     overflow: hidden;
@@ -493,23 +493,23 @@ select {
 
 .autocomplete-item-meta {
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: #a89db5;
     margin-top: 2px;
 }
 
 .autocomplete-loading {
     padding: 16px;
     text-align: center;
-    color: var(--text-secondary);
-    background: var(--bg-secondary);
+    color: #a89db5;
+    background: #1a1225;
 }
 
 .autocomplete-empty {
     padding: 16px;
     text-align: center;
-    color: var(--text-secondary);
+    color: #a89db5;
     font-style: italic;
-    background: var(--bg-secondary);
+    background: #1a1225;
 }
 
 /* List Container */
