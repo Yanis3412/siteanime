@@ -131,6 +131,9 @@
                 <button class="toggle-btn" id="btnFav" onclick="showSection('fav')">
                     <span class="icon">📋</span> Watchlist
                 </button>
+                <button class="toggle-btn" id="btnRecommendations" onclick="showSection('recommendations')">
+                    <span class="icon">💡</span> Recommandations
+                </button>
                 <button class="toggle-btn" id="btnSites" onclick="showSection('sites')">
                     <span class="icon">🌐</span> Sites
                 </button>
@@ -159,6 +162,19 @@
                         </div>
                     </div>
                     <div class="grid-container" id="favListContainer"></div>
+                </div>
+                <div class="content-section" id="sectionRecommendations" style="display:none;">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <span class="icon">💡</span> Recommandations <span id="recommendationsCount">(0)</span>
+                        </div>
+                    </div>
+                    <div class="recommendations-filters">
+                        <div class="recommendations-profiles" id="recommendationsProfiles">
+                            <!-- Checkboxes des profils seront insérés ici -->
+                        </div>
+                    </div>
+                    <div class="grid-container" id="recommendationsListContainer"></div>
                 </div>
                 <div class="content-section" id="sectionSites" style="display:none;">
                     <div class="section-header">

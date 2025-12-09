@@ -754,6 +754,175 @@ function renderList() {
     updateUIForMode();
 }
 
+// Fonction pour afficher les recommandations
+function renderRecommendations() {
+    const container = document.getElementById('recommendationsListContainer');
+    const profilesContainer = document.getElementById('recommendationsProfiles');
+    const countSpan = document.getElementById('recommendationsCount');
+    
+    // Créer les checkboxes pour chaque profil (sauf le profil actuel)
+    profilesContainer.innerHTML = '';
+    const otherProfiles = Object.values(profiles).filter(p => p.id !== currentProfile);
+    
+    if (otherProfiles.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💡</div>
+                <p class="empty-state-text">Aucun autre profil</p>
+                <p class="empty-state-subtext">Créez d'autres profils pour voir leurs recommandations !</p>
+            </div>
+        `;
+        countSpan.textContent = '(0)';
+        return;
+    }
+    
+    // Ajouter les checkboxes des profils
+    otherProfiles.forEach(profile => {
+        const checkboxDiv = document.createElement('div');
+        checkboxDiv.className = 'profile-checkbox-item';
+        checkboxDiv.innerHTML = `
+            <input type="checkbox" id="profile-${profile.id}" checked onchange="renderRecommendations()">
+            <label for="profile-${profile.id}">${profile.name}</label>
+        `;
+        profilesContainer.appendChild(checkboxDiv);
+    });
+    
+    // Collecter les profils sélectionnés
+    const selectedProfiles = otherProfiles.filter(profile => {
+        const checkbox = document.getElementById(`profile-${profile.id}`);
+        return checkbox && checkbox.checked;
+    });
+    
+    if (selectedProfiles.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💡</div>
+                <p class="empty-state-text">Sélectionnez au moins un profil</p>
+                <p class="empty-state-subtext">Cochez les profils pour voir leurs recommandations</p>
+            </div>
+        `;
+        countSpan.textContent = '(0)';
+        return;
+    }
+    
+    // Collecter tous les items des profils sélectionnés avec compteur
+    const recommendationsMap = new Map(); // key: "title-type", value: {item, recommendedBy: [profileNames]}
+    
+    selectedProfiles.forEach(profile => {
+        const profileLibrary = profile.library || [];
+        profileLibrary.forEach(item => {
+            const key = `${item.title}-${item.type}`;
+            
+            // Vérifier si l'item n'est pas déjà dans la bibliothèque du profil actuel
+            const alreadyInLibrary = library.some(myItem => 
+                myItem.title === item.title && myItem.type === item.type
+            );
+            
+            if (!alreadyInLibrary) {
+                if (!recommendationsMap.has(key)) {
+                    recommendationsMap.set(key, {
+                        item: item,
+                        recommendedBy: []
+                    });
+                }
+                recommendationsMap.get(key).recommendedBy.push(profile.name);
+            }
+        });
+    });
+    
+    // Convertir en tableau et trier par nombre de recommandations
+    const recommendations = Array.from(recommendationsMap.values())
+        .sort((a, b) => b.recommendedBy.length - a.recommendedBy.length);
+    
+    countSpan.textContent = `(${recommendations.length})`;
+    
+    if (recommendations.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💡</div>
+                <p class="empty-state-text">Aucune recommandation</p>
+                <p class="empty-state-subtext">Les profils sélectionnés n'ont pas d'anime/manga que vous n'avez pas déjà</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Afficher les recommandations
+    container.innerHTML = '';
+    recommendations.forEach(rec => {
+        const item = rec.item;
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        const icon = item.type === 'Anime' ? '📺' : '📖';
+        const cachedImage = imageCache[`${item.title}-${item.type}`];
+        
+        const totalDisplay = item.total ? item.total : '?';
+        const percentage = item.total ? Math.round((item.current / item.total) * 100) : 0;
+        
+        card.innerHTML = `
+            <div class="card-image">
+                ${cachedImage ? `<img src="${cachedImage}" alt="${item.title}">` : `<div class="card-placeholder">${icon}</div>`}
+            </div>
+            <div class="card-content">
+                <div class="card-title">${item.title}</div>
+                <div class="card-type">${icon} ${item.type}</div>
+                <div class="card-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                    <span class="progress-text">${item.current} / ${totalDisplay}</span>
+                </div>
+                <div class="recommendation-badge">
+                    <span>💡</span>
+                    <span class="recommendation-count">${rec.recommendedBy.length}</span>
+                    <span>× recommandé par:</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                    ${rec.recommendedBy.join(', ')}
+                </div>
+                <button class="add-recommendation-btn" onclick="addRecommendation('${item.title.replace(/'/g, "\\'")}', '${item.type}')">
+                    + Ajouter à ma liste
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+// Ajouter une recommandation à sa liste
+async function addRecommendation(title, type) {
+    // Vérifier si l'item existe déjà
+    const exists = library.some(item => item.title === title && item.type === type);
+    if (exists) {
+        alert('Cet élément est déjà dans ta liste !');
+        return;
+    }
+    
+    // Ajouter l'item avec progression à 0
+    const newItem = {
+        title: title,
+        type: type,
+        current: 0,
+        total: null,
+        fav: false,
+        note: ''
+    };
+    
+    library.push(newItem);
+    await saveData();
+    
+    // Rafraîchir les infos depuis l'API
+    const index = library.length - 1;
+    await refreshItemInfo(index);
+    
+    // Rafraîchir l'affichage des recommandations
+    renderRecommendations();
+    
+    alert(`${title} ajouté à ta liste !`);
+}
+
 // Ajout du bouton favori dans les cartes
 function renderSimpleCard(container, item, index, icon, cachedImage, isFavSection = false) {
     const totalDisplay = item.total ? item.total : '?';
@@ -1343,13 +1512,20 @@ function showSection(section) {
     document.getElementById('btnManga').classList.toggle('active', section === 'manga');
     document.getElementById('btnAnime').classList.toggle('active', section === 'anime');
     document.getElementById('btnFav').classList.toggle('active', section === 'fav');
+    document.getElementById('btnRecommendations').classList.toggle('active', section === 'recommendations');
     document.getElementById('btnSites').classList.toggle('active', section === 'sites');
 
     // Show/hide sections
     document.getElementById('sectionManga').style.display = section === 'manga' ? 'block' : 'none';
     document.getElementById('sectionAnime').style.display = section === 'anime' ? 'block' : 'none';
     document.getElementById('sectionFav').style.display = section === 'fav' ? 'block' : 'none';
+    document.getElementById('sectionRecommendations').style.display = section === 'recommendations' ? 'block' : 'none';
     document.getElementById('sectionSites').style.display = section === 'sites' ? 'block' : 'none';
+
+    // Si on affiche les recommandations, les générer
+    if (section === 'recommendations') {
+        renderRecommendations();
+    }
 
     // Keep grid layout
     document.getElementById('sectionsLayout').style.gridTemplateColumns = '1fr';

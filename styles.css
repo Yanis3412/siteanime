@@ -283,6 +283,89 @@ header {
     box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
 }
 
+/* Recommendations filters */
+.recommendations-filters {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(157, 78, 221, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(157, 78, 221, 0.2);
+}
+
+.recommendations-profiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.profile-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(157, 78, 221, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.profile-checkbox-item:hover {
+    background: rgba(157, 78, 221, 0.2);
+    border-color: var(--accent);
+}
+
+.profile-checkbox-item input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}
+
+.profile-checkbox-item label {
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.recommendation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(157, 78, 221, 0.2);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 8px;
+}
+
+.recommendation-count {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.add-recommendation-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-recommendation-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
+}
+
 /* Check new releases button */
 .check-new-btn {
     background: linear-gradient(135deg, rgba(230, 57, 70, 0.2), rgba(157, 78, 221, 0.2));
