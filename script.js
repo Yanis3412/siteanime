@@ -649,7 +649,7 @@ function renderCardWithSeasons(container, item, index, icon, cachedImage, isFavS
                     </div>
                 </div>
             </div>
-            <div class="progress-count" style="margin-right: 10px;">
+            <div class="card-controls-placeholder">
                 <strong>${watchedEpisodes}</strong> / ${totalEpisodes}
             </div>
             <div class="card-actions">

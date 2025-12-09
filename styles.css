@@ -876,7 +876,26 @@ select {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    min-width: 220px;
+    justify-content: center;
+}
+
+.card-controls-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 220px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 14px;
+    border-radius: 14px;
+    gap: 8px;
+}
+
+.card-controls-placeholder strong {
+    color: var(--text-main);
 }
 
 .btn-control {
