@@ -283,6 +283,36 @@ header {
     box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
 }
 
+.profile-menu-separator {
+    height: 1px;
+    background: rgba(157, 78, 221, 0.2);
+    margin: 12px 8px;
+}
+
+.profile-menu-action {
+    width: 100%;
+    padding: 12px;
+    background: rgba(230, 57, 70, 0.1);
+    border: 1px solid rgba(230, 57, 70, 0.2);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+}
+
+.profile-menu-action:hover {
+    background: rgba(230, 57, 70, 0.2);
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
 /* Recommendations filters */
 .recommendations-filters {
     margin: 20px 0;

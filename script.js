@@ -260,6 +260,76 @@ function closeUnlockModal() {
     pendingProfileSwitch = null;
 }
 
+// Exporter les profils
+function exportProfiles() {
+    const dataStr = JSON.stringify(profiles, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `anime-profiles-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('Profils exportés avec succès ! 📤\nTransfère ce fichier sur ton autre PC.');
+    toggleProfileMenu();
+}
+
+// Importer les profils
+function importProfiles() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const importedProfiles = JSON.parse(event.target.result);
+                
+                // Vérifier que c'est bien un objet de profils valide
+                if (typeof importedProfiles !== 'object' || !importedProfiles.default) {
+                    alert('Fichier invalide ! Le fichier doit contenir des profils valides.');
+                    return;
+                }
+                
+                // Fusionner avec les profils existants (les importés ont la priorité)
+                const confirmed = confirm(
+                    `Importer ${Object.keys(importedProfiles).length} profil(s) ?\n\n` +
+                    `⚠️ Les profils existants avec les mêmes noms seront remplacés.\n\n` +
+                    `Profils à importer :\n${Object.values(importedProfiles).map(p => `- ${p.name}`).join('\n')}`
+                );
+                
+                if (confirmed) {
+                    profiles = { ...profiles, ...importedProfiles };
+                    localStorage.setItem('animeProfiles', JSON.stringify(profiles));
+                    
+                    // Recharger le profil actuel si disponible, sinon revenir au défaut
+                    if (!profiles[currentProfile]) {
+                        currentProfile = 'default';
+                    }
+                    
+                    loadCurrentProfile();
+                    renderList();
+                    alert('Profils importés avec succès ! 📥');
+                }
+            } catch (error) {
+                alert('Erreur lors de la lecture du fichier. Assure-toi que c\'est un fichier JSON valide.');
+                console.error('Erreur import:', error);
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+    toggleProfileMenu();
+}
+
 // Renommer un profil
 function renameProfile(profileId) {
     editingProfileId = profileId;
