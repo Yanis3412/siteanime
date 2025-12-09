@@ -27,6 +27,24 @@ function loadProfiles() {
             profiles['default'].isAdmin = true;
             localStorage.setItem('animeProfiles', JSON.stringify(profiles));
         }
+        
+        // Créer le profil Aohac s'il n'existe pas
+        const aohacExists = Object.values(profiles).some(p => p.name === 'Aohac');
+        if (!aohacExists) {
+            const aohacId = 'profile_aohac';
+            profiles[aohacId] = {
+                id: aohacId,
+                name: 'Aohac',
+                password: '123456',
+                isAdmin: true,
+                library: [],
+                imageCache: {},
+                malInfoCache: {},
+                lastUpdateCheck: 0,
+                lastKnownTotals: {}
+            };
+            localStorage.setItem('animeProfiles', JSON.stringify(profiles));
+        }
     } else {
         // Migrer les anciennes données vers le profil par défaut
         const oldLibrary = JSON.parse(localStorage.getItem('viegoList')) || [];
@@ -47,6 +65,17 @@ function loadProfiles() {
                 malInfoCache: oldMalInfoCache,
                 lastUpdateCheck: oldLastUpdateCheck,
                 lastKnownTotals: oldLastKnownTotals
+            },
+            'profile_aohac': {
+                id: 'profile_aohac',
+                name: 'Aohac',
+                password: '123456',
+                isAdmin: true,
+                library: [],
+                imageCache: {},
+                malInfoCache: {},
+                lastUpdateCheck: 0,
+                lastKnownTotals: {}
             }
         };
         
@@ -380,21 +409,73 @@ function deleteProfile(profileId) {
     }
 }
 
+// Changer le mot de passe d'un profil
+function changePassword(profileId) {
+    const profile = profiles[profileId];
+    
+    // Vérifier si l'utilisateur actuel est Aohac (profil admin) ou le propriétaire du profil
+    const canChangePassword = isAdminMode || currentProfile === profileId || profile.name === 'Aohac';
+    
+    if (!canChangePassword && currentProfile !== 'default') {
+        alert('Seul l\'administrateur ou Aohac peut modifier les mots de passe des autres profils');
+        return;
+    }
+    
+    const currentPassword = prompt(`Mot de passe actuel de "${profile.name}" :`);
+    
+    // Si ce n'est pas le profil actuel et pas admin, vérifier le mot de passe actuel
+    if (currentProfile !== profileId && !isAdminMode && profile.name !== 'Aohac') {
+        if (currentPassword !== profile.password) {
+            alert('Mot de passe incorrect');
+            return;
+        }
+    }
+    
+    const newPassword = prompt('Nouveau mot de passe (6 chiffres maximum) :');
+    
+    if (!newPassword) return;
+    
+    if (newPassword.length > 6 || !/^\d+$/.test(newPassword)) {
+        alert('Le mot de passe doit être composé de 6 chiffres maximum');
+        return;
+    }
+    
+    const confirmPassword = prompt('Confirmer le nouveau mot de passe :');
+    
+    if (newPassword !== confirmPassword) {
+        alert('Les mots de passe ne correspondent pas');
+        return;
+    }
+    
+    profiles[profileId].password = newPassword;
+    saveProfiles();
+    alert(`Mot de passe de "${profile.name}" modifié avec succès !`);
+}
+
 // Afficher la liste des profils
 function renderProfileList() {
     const profileList = document.getElementById('profileList');
-    profileList.innerHTML = Object.values(profiles).map(profile => `
-        <div class="profile-item ${profile.id === currentProfile ? 'active' : ''}" onclick="switchProfile('${profile.id}')">
-            <div class="profile-item-info">
-                <span class="profile-item-name">${profile.name}</span>
-                <span class="profile-item-count">${profile.library?.length || 0} éléments</span>
+    profileList.innerHTML = Object.values(profiles).map(profile => {
+        // L'utilisateur peut changer le mot de passe si :
+        // - C'est un admin
+        // - C'est son propre profil
+        // - Le profil actuel est Aohac
+        const canChangePassword = isAdminMode || currentProfile === profile.id || profiles[currentProfile]?.name === 'Aohac';
+        
+        return `
+            <div class="profile-item ${profile.id === currentProfile ? 'active' : ''}" onclick="switchProfile('${profile.id}')">
+                <div class="profile-item-info">
+                    <span class="profile-item-name">${profile.name}</span>
+                    <span class="profile-item-count">${profile.library?.length || 0} éléments</span>
+                </div>
+                <div class="profile-item-actions" onclick="event.stopPropagation()">
+                    <button class="profile-item-btn" onclick="renameProfile('${profile.id}')" title="Renommer">✏️</button>
+                    ${canChangePassword ? `<button class="profile-item-btn" onclick="changePassword('${profile.id}')" title="Changer le mot de passe">🔑</button>` : ''}
+                    ${profile.id !== 'default' ? `<button class="profile-item-btn delete" onclick="deleteProfile('${profile.id}')" title="Supprimer">🗑️</button>` : ''}
+                </div>
             </div>
-            <div class="profile-item-actions" onclick="event.stopPropagation()">
-                <button class="profile-item-btn" onclick="renameProfile('${profile.id}')" title="Renommer">✏️</button>
-                ${profile.id !== 'default' ? `<button class="profile-item-btn delete" onclick="deleteProfile('${profile.id}')" title="Supprimer">🗑️</button>` : ''}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Toggle menu profil
