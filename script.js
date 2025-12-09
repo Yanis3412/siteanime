@@ -168,6 +168,12 @@ function selectProfileFromScreen(profileId) {
         if (modal) {
             modal.classList.add('active');
             console.log('Classe active ajoutée, classes actuelles:', modal.className);
+            console.log('Style du modal:', {
+                display: window.getComputedStyle(modal).display,
+                opacity: window.getComputedStyle(modal).opacity,
+                visibility: window.getComputedStyle(modal).visibility,
+                zIndex: window.getComputedStyle(modal).zIndex
+            });
         }
         document.getElementById('unlockPasswordInput').value = '';
         document.getElementById('unlockError').textContent = '';
