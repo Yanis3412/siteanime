@@ -1116,6 +1116,7 @@ async function checkNewReleases() {
     btn.innerHTML = '⏳ Vérification...';
     
     const notifications = [];
+    const upcomingReleases = [];
     
     // Charger les totaux connus depuis le localStorage
     const savedTotals = localStorage.getItem('lastKnownTotals');
@@ -1165,6 +1166,24 @@ async function checkNewReleases() {
                     library[i].total = info.total;
                 }
             }
+            
+            // Chercher les prochaines sorties pour les animes
+            if (item.type === 'Anime' && item.malId && item.status !== 'completed') {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                const upcoming = await fetchUpcomingEpisode(item.malId, item.title);
+                if (upcoming) {
+                    upcomingReleases.push(upcoming);
+                }
+            }
+            
+            // Chercher les prochaines sorties pour les mangas
+            if (item.type === 'Manga' && item.malId && item.status !== 'completed') {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                const upcoming = await fetchUpcomingChapter(item.malId, item.title, item.total);
+                if (upcoming) {
+                    upcomingReleases.push(upcoming);
+                }
+            }
         } catch (error) {
             console.error(`Erreur pour ${item.title}:`, error);
         }
@@ -1182,35 +1201,205 @@ async function checkNewReleases() {
     btn.innerHTML = originalText;
     
     // Afficher les notifications
-    showNotificationsPopup(notifications);
+    showNotificationsPopup(notifications, upcomingReleases);
 }
 
-function showNotificationsPopup(notifications) {
+// Récupérer le prochain épisode d'un anime
+async function fetchUpcomingEpisode(malId, title) {
+    try {
+        const response = await fetch(`https://api.jikan.moe/v4/anime/${malId}`);
+        const data = await response.json();
+        
+        if (data.data && data.data.broadcast && data.data.broadcast.string && data.data.status === 'Currently Airing') {
+            const broadcast = data.data.broadcast;
+            const nextEpisode = data.data.episodes ? `Épisode ${(data.data.episodes || 0) + 1}` : 'Prochain épisode';
+            
+            // Calculer la prochaine date de diffusion
+            const nextDate = getNextBroadcastDate(broadcast.day, broadcast.time, broadcast.timezone);
+            
+            if (nextDate) {
+                return {
+                    title: title,
+                    type: 'Anime',
+                    icon: '📺',
+                    episode: nextEpisode,
+                    date: nextDate,
+                    dateStr: formatDate(nextDate),
+                    broadcastDay: broadcast.day,
+                    broadcastTime: broadcast.time
+                };
+            }
+        }
+    } catch (error) {
+        console.error(`Erreur upcoming anime ${title}:`, error);
+    }
+    return null;
+}
+
+// Récupérer le prochain chapitre d'un manga (estimation basée sur le rythme de publication)
+async function fetchUpcomingChapter(malId, title, currentTotal) {
+    try {
+        const response = await fetch(`https://api.jikan.moe/v4/manga/${malId}`);
+        const data = await response.json();
+        
+        if (data.data && data.data.status === 'Publishing') {
+            // Les mangas hebdomadaires sortent généralement chaque semaine
+            // On estime la prochaine sortie basée sur le type de publication
+            const manga = data.data;
+            const nextChapter = (currentTotal || manga.chapters || 0) + 1;
+            
+            // Estimation : si c'est un manga en cours, le prochain chapitre sort probablement dans la semaine
+            // On regarde si c'est un magazine hebdomadaire connu
+            let estimatedDate = null;
+            let frequency = 'hebdomadaire';
+            
+            // Magazines hebdomadaires connus
+            const weeklyMagazines = ['Shonen Jump', 'Weekly Shonen Jump', 'Weekly Shonen Magazine', 'Shonen Magazine'];
+            const isWeekly = manga.serializations?.some(s => 
+                weeklyMagazines.some(m => s.name.toLowerCase().includes(m.toLowerCase()))
+            );
+            
+            if (isWeekly) {
+                // Prochain dimanche/lundi (jour typique de sortie Jump)
+                estimatedDate = getNextWeekday(0); // Dimanche
+                frequency = 'hebdomadaire';
+            } else {
+                // Mensuel ou autre - estimation plus vague
+                estimatedDate = new Date();
+                estimatedDate.setDate(estimatedDate.getDate() + 14); // Dans ~2 semaines
+                frequency = 'bimensuel/mensuel';
+            }
+            
+            return {
+                title: title,
+                type: 'Manga',
+                icon: '📖',
+                episode: `Chapitre ${nextChapter}`,
+                date: estimatedDate,
+                dateStr: formatDate(estimatedDate),
+                frequency: frequency,
+                magazine: manga.serializations?.[0]?.name || null
+            };
+        }
+    } catch (error) {
+        console.error(`Erreur upcoming manga ${title}:`, error);
+    }
+    return null;
+}
+
+// Calculer la prochaine date de diffusion
+function getNextBroadcastDate(day, time, timezone) {
+    if (!day) return null;
+    
+    const days = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+    const dayIndex = days.findIndex(d => d.toLowerCase().startsWith(day.toLowerCase()));
+    if (dayIndex === -1) return null;
+    
+    const now = new Date();
+    const targetDay = dayIndex;
+    const currentDay = now.getDay();
+    
+    let daysUntil = targetDay - currentDay;
+    if (daysUntil <= 0) daysUntil += 7; // Si c'est aujourd'hui ou passé, prendre la semaine prochaine
+    
+    const nextDate = new Date(now);
+    nextDate.setDate(now.getDate() + daysUntil);
+    
+    // Ajouter l'heure si disponible
+    if (time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        nextDate.setHours(hours || 0, minutes || 0, 0, 0);
+    }
+    
+    return nextDate;
+}
+
+// Obtenir le prochain jour de la semaine
+function getNextWeekday(targetDay) {
+    const now = new Date();
+    const currentDay = now.getDay();
+    let daysUntil = targetDay - currentDay;
+    if (daysUntil <= 0) daysUntil += 7;
+    
+    const nextDate = new Date(now);
+    nextDate.setDate(now.getDate() + daysUntil);
+    return nextDate;
+}
+
+// Formater une date
+function formatDate(date) {
+    if (!date) return 'Date inconnue';
+    
+    const now = new Date();
+    const diff = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+    
+    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+    const dateStr = date.toLocaleDateString('fr-FR', options);
+    
+    if (diff === 0) return "Aujourd'hui";
+    if (diff === 1) return "Demain";
+    if (diff < 7) return `${dateStr} (dans ${diff} jours)`;
+    
+    return dateStr;
+}
+
+function showNotificationsPopup(notifications, upcomingReleases = []) {
     const popup = document.getElementById('notificationsPopup');
     const overlay = document.getElementById('notificationsOverlay');
     const content = document.getElementById('notificationsContent');
     
-    if (notifications.length === 0) {
-        content.innerHTML = `
+    let html = '';
+    
+    // Section nouveautés
+    if (notifications.length > 0) {
+        html += `<div class="notifications-section">
+            <h4 class="notifications-section-title">🆕 Nouveautés disponibles</h4>
+            ${notifications.map(n => `
+                <div class="notification-item ${n.type.toLowerCase()}">
+                    <div class="notification-icon">${n.icon}</div>
+                    <div class="notification-info">
+                        <div class="notification-title">${n.title}</div>
+                        <div class="notification-message">${n.message}</div>
+                    </div>
+                    <div class="notification-badge">NEW</div>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+    
+    // Section prochaines sorties
+    if (upcomingReleases.length > 0) {
+        // Trier par date
+        upcomingReleases.sort((a, b) => (a.date || new Date(9999, 0)) - (b.date || new Date(9999, 0)));
+        
+        html += `<div class="notifications-section">
+            <h4 class="notifications-section-title">📅 Prochaines sorties</h4>
+            ${upcomingReleases.map(n => `
+                <div class="notification-item upcoming ${n.type.toLowerCase()}">
+                    <div class="notification-icon">${n.icon}</div>
+                    <div class="notification-info">
+                        <div class="notification-title">${n.title}</div>
+                        <div class="notification-message">${n.episode}</div>
+                        <div class="notification-date">${n.dateStr}${n.magazine ? ` • ${n.magazine}` : ''}</div>
+                    </div>
+                    <div class="notification-badge upcoming">📅</div>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+    
+    // Si rien à afficher
+    if (notifications.length === 0 && upcomingReleases.length === 0) {
+        html = `
             <div class="notification-empty">
                 <div class="notification-empty-icon">✨</div>
                 <p>Aucune nouveauté pour le moment</p>
                 <p class="notification-empty-sub">Toutes tes séries sont à jour !</p>
             </div>
         `;
-    } else {
-        content.innerHTML = notifications.map(n => `
-            <div class="notification-item ${n.type.toLowerCase()}">
-                <div class="notification-icon">${n.icon}</div>
-                <div class="notification-info">
-                    <div class="notification-title">${n.title}</div>
-                    <div class="notification-message">${n.message}</div>
-                </div>
-                <div class="notification-badge">NEW</div>
-            </div>
-        `).join('');
     }
     
+    content.innerHTML = html;
     popup.classList.add('active');
     overlay.classList.add('active');
 }

@@ -312,6 +312,39 @@ header {
     letter-spacing: 0.5px;
 }
 
+.notification-badge.upcoming {
+    background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+}
+
+.notifications-section {
+    margin-bottom: 20px;
+}
+
+.notifications-section:last-child {
+    margin-bottom: 0;
+}
+
+.notifications-section-title {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notification-item.upcoming {
+    background: rgba(157, 78, 221, 0.1);
+}
+
+.notification-date {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 4px;
+    font-weight: 500;
+}
+
 .notification-empty {
     text-align: center;
     padding: 40px 20px;
