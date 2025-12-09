@@ -147,15 +147,24 @@ function showProfileSelectionScreen() {
 
 // Sélectionner un profil depuis l'écran de sélection
 function selectProfileFromScreen(profileId) {
+    console.log('selectProfileFromScreen appelée avec:', profileId);
     const profile = profiles[profileId];
+    console.log('Profil trouvé:', profile);
     
     // Si le profil a un mot de passe, demander de le déverrouiller
     if (profile.password) {
+        console.log('Profil avec mot de passe, ouverture du modal...');
         pendingProfileSwitch = profileId;
-        document.getElementById('unlockProfileModal').classList.add('active');
+        const modal = document.getElementById('unlockProfileModal');
+        console.log('Modal trouvé:', modal);
+        if (modal) {
+            modal.classList.add('active');
+            console.log('Classe active ajoutée, classes actuelles:', modal.className);
+        }
         document.getElementById('unlockPasswordInput').value = '';
         document.getElementById('unlockError').textContent = '';
     } else {
+        console.log('Profil sans mot de passe, chargement direct...');
         // Pas de mot de passe, charger directement
         currentProfile = profileId;
         isSpectatorMode = false;
