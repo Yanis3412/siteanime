@@ -156,11 +156,10 @@ function selectProfileFromScreen(profileId) {
         console.log('Profil avec mot de passe, ouverture du modal...');
         pendingProfileSwitch = profileId;
         
-        // Rendre l'écran de sélection semi-transparent
+        // Masquer complètement l'écran de sélection
         const selectionScreen = document.getElementById('profileSelectionScreen');
         if (selectionScreen) {
-            selectionScreen.style.opacity = '0.3';
-            selectionScreen.style.pointerEvents = 'none';
+            selectionScreen.style.display = 'none';
         }
         
         const modal = document.getElementById('unlockProfileModal');
@@ -407,9 +406,8 @@ function closeUnlockModal() {
     
     // Restaurer l'écran de sélection si on n'a pas switch de profil
     const selectionScreen = document.getElementById('profileSelectionScreen');
-    if (selectionScreen && selectionScreen.style.display !== 'none') {
-        selectionScreen.style.opacity = '1';
-        selectionScreen.style.pointerEvents = 'auto';
+    if (selectionScreen && selectionScreen.style.display === 'none') {
+        selectionScreen.style.display = 'flex';
     }
 }
 
