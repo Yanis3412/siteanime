@@ -10,6 +10,9 @@ let lastKnownTotals = {}; // Pour suivre les totaux connus (chapitres/épisodes)
 let currentProfile = 'default'; // Profil actuel
 let profiles = {}; // Tous les profils
 let editingProfileId = null; // ID du profil en cours d'édition
+let isSpectatorMode = false; // Mode spectateur (lecture seule)
+let isAdminMode = false; // Mode admin (accès complet)
+let pendingProfileSwitch = null; // Profil en attente de déverrouillage
 const API_URL = '/api/data';
 
 // Charger les profils
@@ -17,6 +20,13 @@ function loadProfiles() {
     const savedProfiles = localStorage.getItem('animeProfiles');
     if (savedProfiles) {
         profiles = JSON.parse(savedProfiles);
+        
+        // S'assurer que le profil par défaut a un mot de passe
+        if (profiles['default'] && !profiles['default'].password) {
+            profiles['default'].password = '341245';
+            profiles['default'].isAdmin = true;
+            localStorage.setItem('animeProfiles', JSON.stringify(profiles));
+        }
     } else {
         // Migrer les anciennes données vers le profil par défaut
         const oldLibrary = JSON.parse(localStorage.getItem('viegoList')) || [];
@@ -25,11 +35,13 @@ function loadProfiles() {
         const oldLastUpdateCheck = parseInt(localStorage.getItem('lastUpdateCheck')) || 0;
         const oldLastKnownTotals = JSON.parse(localStorage.getItem('lastKnownTotals')) || {};
         
-        // Créer le profil par défaut avec les anciennes données
+        // Créer le profil par défaut avec les anciennes données et mot de passe admin
         profiles = {
             'default': {
                 id: 'default',
                 name: 'Profil par défaut',
+                password: '341245',
+                isAdmin: true,
                 library: oldLibrary,
                 imageCache: oldImageCache,
                 malInfoCache: oldMalInfoCache,
@@ -63,9 +75,57 @@ function loadCurrentProfile() {
         lastUpdateCheck = profile.lastUpdateCheck || 0;
         lastKnownTotals = profile.lastKnownTotals || {};
         
-        document.getElementById('currentProfileName').textContent = profile.name;
+        // Si on n'est pas déjà en mode spectateur, vérifier si c'est un profil admin
+        if (!isSpectatorMode) {
+            isAdminMode = profile.isAdmin || false;
+        }
+        
+        const profileName = profile.name + (isSpectatorMode ? ' 👁️' : '') + (isAdminMode ? ' 🔓' : '');
+        document.getElementById('currentProfileName').textContent = profileName;
+        
+        // Désactiver les contrôles en mode spectateur
+        updateUIForMode();
     }
     renderProfileList();
+}
+
+// Mettre à jour l'UI selon le mode
+function updateUIForMode() {
+    const isReadOnly = isSpectatorMode;
+    const addForm = document.querySelector('.add-form');
+    const editButtons = document.querySelectorAll('.edit-btn, .delete-btn, .btn-control, .add-btn, .refresh-item-btn, .refresh-all-btn, .detail-btn.edit, .detail-btn.delete, .detail-action-btn');
+    const addButton = document.querySelector('.add-anime-btn');
+    const noteInputs = document.querySelectorAll('.detail-note-input, #detailProgressInput');
+    
+    if (addForm) {
+        addForm.style.opacity = isReadOnly ? '0.5' : '1';
+        addForm.style.pointerEvents = isReadOnly ? 'none' : 'auto';
+    }
+    
+    if (addButton) {
+        addButton.style.opacity = isReadOnly ? '0.3' : '1';
+        addButton.style.pointerEvents = isReadOnly ? 'none' : 'auto';
+    }
+    
+    editButtons.forEach(btn => {
+        if (isReadOnly) {
+            btn.style.opacity = '0.3';
+            btn.style.pointerEvents = 'none';
+        } else {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+    });
+    
+    noteInputs.forEach(input => {
+        if (isReadOnly) {
+            input.disabled = true;
+            input.style.opacity = '0.5';
+        } else {
+            input.disabled = false;
+            input.style.opacity = '1';
+        }
+    });
 }
 
 // Sauvegarder les profils
@@ -87,10 +147,23 @@ function saveProfiles() {
 // Changer de profil
 function switchProfile(profileId) {
     if (profiles[profileId]) {
+        const profile = profiles[profileId];
+        
+        // Si le profil a un mot de passe et qu'on n'est pas admin
+        if (profile.password && !isAdminMode) {
+            pendingProfileSwitch = profileId;
+            document.getElementById('unlockProfileModal').classList.add('active');
+            document.getElementById('unlockPasswordInput').value = '';
+            document.getElementById('unlockError').textContent = '';
+            toggleProfileMenu();
+            return;
+        }
+        
         // Sauvegarder le profil actuel avant de changer
         saveProfiles();
         
         currentProfile = profileId;
+        isSpectatorMode = false;
         loadCurrentProfile();
         renderList();
         toggleProfileMenu();
@@ -99,12 +172,33 @@ function switchProfile(profileId) {
 
 // Créer un nouveau profil
 function createNewProfile() {
+    document.getElementById('createProfileModal').classList.add('active');
+    document.getElementById('newProfileName').value = `Profil ${Object.keys(profiles).length}`;
+    document.getElementById('newProfilePassword').value = '';
+}
+
+// Confirmer la création du profil
+function confirmCreateProfile() {
+    const name = document.getElementById('newProfileName').value.trim();
+    const password = document.getElementById('newProfilePassword').value.trim();
+    
+    if (!name) {
+        alert('Le nom du profil est obligatoire');
+        return;
+    }
+    
+    if (!password || password.length > 6 || !/^\d+$/.test(password)) {
+        alert('Le mot de passe doit être composé de 6 chiffres maximum');
+        return;
+    }
+    
     const profileId = 'profile_' + Date.now();
-    const profileName = `Profil ${Object.keys(profiles).length}`;
     
     profiles[profileId] = {
         id: profileId,
-        name: profileName,
+        name: name,
+        password: password,
+        isAdmin: false,
         library: [],
         imageCache: {},
         malInfoCache: {},
@@ -113,7 +207,57 @@ function createNewProfile() {
     };
     
     saveProfiles();
-    switchProfile(profileId);
+    closeCreateProfileModal();
+    
+    // Switch directement au nouveau profil (pas besoin de déverrouiller car on vient de le créer)
+    currentProfile = profileId;
+    isSpectatorMode = false;
+    isAdminMode = false;
+    loadCurrentProfile();
+    renderList();
+}
+
+// Fermer le modal de création
+function closeCreateProfileModal() {
+    document.getElementById('createProfileModal').classList.remove('active');
+}
+
+// Déverrouiller un profil
+function attemptUnlock() {
+    const password = document.getElementById('unlockPasswordInput').value.trim();
+    const profile = profiles[pendingProfileSwitch];
+    const errorDiv = document.getElementById('unlockError');
+    
+    if (password === profile.password) {
+        // Mot de passe correct
+        saveProfiles();
+        currentProfile = pendingProfileSwitch;
+        isSpectatorMode = false;
+        isAdminMode = profile.isAdmin || false;
+        loadCurrentProfile();
+        renderList();
+        closeUnlockModal();
+    } else {
+        // Mot de passe incorrect
+        errorDiv.textContent = 'Mot de passe incorrect';
+    }
+}
+
+// Mode spectateur
+function spectatorMode() {
+    saveProfiles();
+    currentProfile = pendingProfileSwitch;
+    isSpectatorMode = true;
+    isAdminMode = false;
+    loadCurrentProfile();
+    renderList();
+    closeUnlockModal();
+}
+
+// Fermer le modal de déverrouillage
+function closeUnlockModal() {
+    document.getElementById('unlockProfileModal').classList.remove('active');
+    pendingProfileSwitch = null;
 }
 
 // Renommer un profil
@@ -605,6 +749,9 @@ function renderList() {
     
     siteCard.innerHTML = sitesHTML;
     sitesContainer.appendChild(siteCard);
+    
+    // Mettre à jour l'UI pour le mode spectateur/admin
+    updateUIForMode();
 }
 
 // Ajout du bouton favori dans les cartes
