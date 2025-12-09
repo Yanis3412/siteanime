@@ -1819,8 +1819,11 @@ function showSection(section) {
 // Affiche la section "Mangas" au démarrage
 showSection('manga');
 
-// Charger les profils au démarrage (affiche l'écran de sélection)
-loadProfiles();
+// Attendre que le DOM soit chargé avant de charger les profils
+document.addEventListener('DOMContentLoaded', () => {
+    loadProfiles();
+    initAutocomplete();
+});
 
 // Wrappers pour les appels onclick (qui ne peuvent pas être async)
 function addItemWrapper() {
@@ -2536,7 +2539,4 @@ function hideAutocomplete() {
     selectedAutocompleteItem = null;
 }
 
-// Initialiser l'auto-complétion au chargement
-document.addEventListener('DOMContentLoaded', () => {
-    initAutocomplete();
-});
+// Initialiser l'auto-complétion au chargement (fusionné avec DOMContentLoaded ci-dessus)
