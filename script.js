@@ -811,6 +811,9 @@ function renderRecommendations() {
     selectedProfiles.forEach(profile => {
         const profileLibrary = profile.library || [];
         profileLibrary.forEach(item => {
+            // Ne prendre que les items marqués comme recommandés
+            if (!item.recommended) return;
+            
             const key = `${item.title}-${item.type}`;
             
             // Vérifier si l'item n'est pas déjà dans la bibliothèque du profil actuel
@@ -1019,6 +1022,7 @@ function renderHorizontalCard(container, item, index, icon, cachedImage, isFavSe
     const totalDisplay = item.total || '?';
     const unitLabel = item.type === 'Anime' ? 'épisodes' : 'chapitres';
     const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '📋'}</button>`;
+    const recommendBtn = `<button class="btn-control ${item.recommended ? 'recommended' : ''}" onclick="event.stopPropagation(); toggleRecommendationWrapper(${index})" title="Recommander">💡</button>`;
     
     // Note preview
     const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
@@ -1053,6 +1057,7 @@ function renderHorizontalCard(container, item, index, icon, cachedImage, isFavSe
             </div>
             <div class="card-actions">
                 ${favBtn}
+                ${recommendBtn}
                 <button class="refresh-item-btn" onclick="event.stopPropagation(); refreshItemWithSeasonsWrapper(${index})" title="Rafraîchir">🔄</button>
                 <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${index})">✏️</button>
                 <button class="delete-btn" onclick="event.stopPropagation(); deleteItemWrapper(${index})">🗑️</button>
@@ -1123,6 +1128,7 @@ function renderCardWithSeasons(container, item, index, icon, cachedImage, isFavS
     });
     
     const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '📋'}</button>`;
+    const recommendBtn = `<button class="btn-control ${item.recommended ? 'recommended' : ''}" onclick="event.stopPropagation(); toggleRecommendationWrapper(${index})" title="Recommander">💡</button>`;
     cardGroup.innerHTML = `
         <div class="card-group-header" onclick="openDetailPanel(${index})">
             <button class="expand-btn" onclick="event.stopPropagation(); toggleExpandWrapper(${index})" title="Afficher/masquer les saisons">▶</button>
@@ -1142,6 +1148,7 @@ function renderCardWithSeasons(container, item, index, icon, cachedImage, isFavS
             </div>
             <div class="card-actions">
                 ${favBtn}
+                ${recommendBtn}
                 <button class="refresh-item-btn" onclick="event.stopPropagation(); refreshItemWithSeasonsWrapper(${index})" title="Rafraîchir">🔄</button>
                 <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${index})">✏️</button>
                 <button class="delete-btn" onclick="event.stopPropagation(); deleteItemWrapper(${index})">🗑️</button>
@@ -1412,6 +1419,12 @@ async function deleteItem(index) {
 
 async function toggleFav(index) {
     library[index].fav = !library[index].fav;
+    await saveData();
+    renderList();
+}
+
+async function toggleRecommendation(index) {
+    library[index].recommended = !library[index].recommended;
     await saveData();
     renderList();
 }
@@ -1941,6 +1954,10 @@ function deleteItemWrapper(index) {
 
 function toggleFavWrapper(index) {
     toggleFav(index).catch(err => console.error('Erreur lors de la modification:', err));
+}
+
+function toggleRecommendationWrapper(index) {
+    toggleRecommendation(index).catch(err => console.error('Erreur lors de la modification:', err));
 }
 
 function toggleExpandWrapper(index) {
