@@ -465,7 +465,7 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
         ? `<img src="${cachedImage}" alt="${item.title}" onerror="this.parentElement.innerHTML='<div class=card-icon-fallback>${icon}</div>'">`
         : `<div class="card-icon-fallback">${icon}</div>`;
     
-    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '🕰️'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '📋'}</button>`;
     
     // Note preview (truncated)
     const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
@@ -530,7 +530,7 @@ function renderHorizontalCard(container, item, index, icon, cachedImage, isFavSe
     
     const totalDisplay = item.total || '?';
     const unitLabel = item.type === 'Anime' ? 'épisodes' : 'chapitres';
-    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '🕰️'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '📋'}</button>`;
     
     // Note preview
     const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
@@ -634,7 +634,7 @@ function renderCardWithSeasons(container, item, index, icon, cachedImage, isFavS
         `;
     });
     
-    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '🕰️'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '📋'}</button>`;
     cardGroup.innerHTML = `
         <div class="card-group-header" onclick="openDetailPanel(${index})">
             <button class="expand-btn" onclick="event.stopPropagation(); toggleExpandWrapper(${index})" title="Afficher/masquer les saisons">▶</button>
@@ -1316,7 +1316,7 @@ function openDetailPanel(index) {
         favBtn.innerHTML = '<span>📋</span> Dans la Watchlist';
     } else {
         favBtn.classList.remove('active');
-        favBtn.innerHTML = '<span>🕰️</span> À regarder plus tard';
+        favBtn.innerHTML = '<span>📋</span> Ajouter à la Watchlist';
     }
     
     // Afficher le panneau
