@@ -99,32 +99,39 @@ function showProfileSelectionScreen() {
     screen.style.display = 'flex';
     mainContainer.style.display = 'none';
     
-    grid.innerHTML = Object.values(profiles).map(profile => {
+    grid.innerHTML = '';
+    
+    // Ajouter chaque profil
+    Object.values(profiles).forEach(profile => {
         const itemCount = profile.library?.length || 0;
-        const adminBadge = profile.isAdmin ? '<div class="profile-selection-badge">ADMIN</div>' : '';
+        const card = document.createElement('div');
+        card.className = 'profile-selection-card';
         
-        return `
-            <div class="profile-selection-card" onclick="selectProfileFromScreen('${profile.id}')">
-                ${adminBadge}
-                <div class="profile-selection-card-content">
-                    <div class="profile-selection-icon">👤</div>
-                    <div class="profile-selection-name">${profile.name}</div>
-                    <div class="profile-selection-count">${itemCount} élément${itemCount > 1 ? 's' : ''}</div>
-                </div>
+        card.innerHTML = `
+            ${profile.isAdmin ? '<div class="profile-selection-badge">ADMIN</div>' : ''}
+            <div class="profile-selection-card-content">
+                <div class="profile-selection-icon">👤</div>
+                <div class="profile-selection-name">${profile.name}</div>
+                <div class="profile-selection-count">${itemCount} élément${itemCount > 1 ? 's' : ''}</div>
             </div>
         `;
-    }).join('');
+        
+        card.addEventListener('click', () => selectProfileFromScreen(profile.id));
+        grid.appendChild(card);
+    });
     
     // Ajouter une carte pour créer un nouveau profil
-    grid.innerHTML += `
-        <div class="profile-selection-card" onclick="createNewProfileFromScreen()">
-            <div class="profile-selection-card-content">
-                <div class="profile-selection-icon">➕</div>
-                <div class="profile-selection-name">Nouveau profil</div>
-                <div class="profile-selection-count">Créer</div>
-            </div>
+    const newProfileCard = document.createElement('div');
+    newProfileCard.className = 'profile-selection-card';
+    newProfileCard.innerHTML = `
+        <div class="profile-selection-card-content">
+            <div class="profile-selection-icon">➕</div>
+            <div class="profile-selection-name">Nouveau profil</div>
+            <div class="profile-selection-count">Créer</div>
         </div>
     `;
+    newProfileCard.addEventListener('click', () => createNewProfileFromScreen());
+    grid.appendChild(newProfileCard);
 }
 
 // Sélectionner un profil depuis l'écran de sélection
