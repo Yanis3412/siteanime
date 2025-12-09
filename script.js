@@ -1212,7 +1212,9 @@ async function fetchUpcomingEpisode(malId, title) {
         
         if (data.data && data.data.broadcast && data.data.broadcast.string && data.data.status === 'Currently Airing') {
             const broadcast = data.data.broadcast;
-            const nextEpisode = data.data.episodes ? `Épisode ${(data.data.episodes || 0) + 1}` : 'Prochain épisode';
+            const anime = data.data;
+            const nextEpisode = anime.episodes ? `Épisode ${(anime.episodes || 0) + 1}` : 'Prochain épisode';
+            const imageUrl = anime.images?.jpg?.small_image_url || anime.images?.jpg?.image_url || null;
             
             // Calculer la prochaine date de diffusion
             const nextDate = getNextBroadcastDate(broadcast.day, broadcast.time, broadcast.timezone);
@@ -1222,6 +1224,7 @@ async function fetchUpcomingEpisode(malId, title) {
                     title: title,
                     type: 'Anime',
                     icon: '📺',
+                    image: imageUrl,
                     episode: nextEpisode,
                     date: nextDate,
                     dateStr: formatDate(nextDate),
@@ -1247,6 +1250,7 @@ async function fetchUpcomingChapter(malId, title, currentTotal) {
             // On estime la prochaine sortie basée sur le type de publication
             const manga = data.data;
             const nextChapter = (currentTotal || manga.chapters || 0) + 1;
+            const imageUrl = manga.images?.jpg?.small_image_url || manga.images?.jpg?.image_url || null;
             
             // Estimation : si c'est un manga en cours, le prochain chapitre sort probablement dans la semaine
             // On regarde si c'est un magazine hebdomadaire connu
@@ -1274,6 +1278,7 @@ async function fetchUpcomingChapter(malId, title, currentTotal) {
                 title: title,
                 type: 'Manga',
                 icon: '📖',
+                image: imageUrl,
                 episode: `Chapitre ${nextChapter}`,
                 date: estimatedDate,
                 dateStr: formatDate(estimatedDate),
@@ -1374,17 +1379,21 @@ function showNotificationsPopup(notifications, upcomingReleases = []) {
         
         html += `<div class="notifications-section">
             <h4 class="notifications-section-title">📅 Prochaines sorties</h4>
-            ${upcomingReleases.map(n => `
+            ${upcomingReleases.map(n => {
+                const imageHtml = n.image 
+                    ? `<img src="${n.image}" alt="${n.title}" class="notification-image" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="notification-icon-fallback" style="display:none;">${n.icon}</div>`
+                    : `<div class="notification-icon-fallback">${n.icon}</div>`;
+                return `
                 <div class="notification-item upcoming ${n.type.toLowerCase()}">
-                    <div class="notification-icon">${n.icon}</div>
+                    <div class="notification-image-container">${imageHtml}</div>
                     <div class="notification-info">
                         <div class="notification-title">${n.title}</div>
                         <div class="notification-message">${n.episode}</div>
                         <div class="notification-date">${n.dateStr}${n.magazine ? ` • ${n.magazine}` : ''}</div>
                     </div>
-                    <div class="notification-badge upcoming">📅</div>
+                    <div class="notification-badge upcoming">${n.icon}</div>
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>`;
     }
     
