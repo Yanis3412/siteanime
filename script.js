@@ -18,18 +18,28 @@ function loadProfiles() {
     if (savedProfiles) {
         profiles = JSON.parse(savedProfiles);
     } else {
-        // Créer le profil par défaut
+        // Migrer les anciennes données vers le profil par défaut
+        const oldLibrary = JSON.parse(localStorage.getItem('viegoList')) || [];
+        const oldImageCache = JSON.parse(localStorage.getItem('imageCache')) || {};
+        const oldMalInfoCache = JSON.parse(localStorage.getItem('malInfoCache')) || {};
+        const oldLastUpdateCheck = parseInt(localStorage.getItem('lastUpdateCheck')) || 0;
+        const oldLastKnownTotals = JSON.parse(localStorage.getItem('lastKnownTotals')) || {};
+        
+        // Créer le profil par défaut avec les anciennes données
         profiles = {
             'default': {
                 id: 'default',
                 name: 'Profil par défaut',
-                library: [],
-                imageCache: {},
-                malInfoCache: {},
-                lastUpdateCheck: 0,
-                lastKnownTotals: {}
+                library: oldLibrary,
+                imageCache: oldImageCache,
+                malInfoCache: oldMalInfoCache,
+                lastUpdateCheck: oldLastUpdateCheck,
+                lastKnownTotals: oldLastKnownTotals
             }
         };
+        
+        // Sauvegarder immédiatement
+        localStorage.setItem('animeProfiles', JSON.stringify(profiles));
     }
     
     // Charger le dernier profil utilisé
