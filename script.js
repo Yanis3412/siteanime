@@ -465,7 +465,7 @@ function renderSimpleCard(container, item, index, icon, cachedImage, isFavSectio
         ? `<img src="${cachedImage}" alt="${item.title}" onerror="this.parentElement.innerHTML='<div class=card-icon-fallback>${icon}</div>'">`
         : `<div class="card-icon-fallback">${icon}</div>`;
     
-    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '☐'}</button>`;
     
     // Note preview (truncated)
     const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
@@ -530,7 +530,7 @@ function renderHorizontalCard(container, item, index, icon, cachedImage, isFavSe
     
     const totalDisplay = item.total || '?';
     const unitLabel = item.type === 'Anime' ? 'épisodes' : 'chapitres';
-    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '☐'}</button>`;
     
     // Note preview
     const notePreview = item.note ? `<div class="card-note-preview">${item.note.length > 60 ? item.note.substring(0, 60) + '...' : item.note}</div>` : '';
@@ -550,8 +550,18 @@ function renderHorizontalCard(container, item, index, icon, cachedImage, isFavSe
                 </div>
                 ${notePreview}
             </div>
-            <div class="progress-count" style="margin-right: 10px;">
-                <strong>${item.current}</strong> / ${totalDisplay}
+            <div class="card-controls" onclick="event.stopPropagation()">
+                <button class="btn-control" onclick="updateProgressWrapper(${index}, -1)">−</button>
+                <span class="progress-count">
+                    <input type="number" class="editable-value" value="${item.current}" 
+                        onchange="setProgressWrapper(${index}, this.value)"
+                        min="0" ${item.total ? `max="${item.total}"` : ''}>
+                    <span>/</span>
+                    <input type="number" class="editable-total" value="${item.total || ''}" 
+                        onchange="setTotalWrapper(${index}, this.value)"
+                        placeholder="?">
+                </span>
+                <button class="btn-control" onclick="updateProgressWrapper(${index}, 1)">+</button>
             </div>
             <div class="card-actions">
                 ${favBtn}
@@ -624,7 +634,7 @@ function renderCardWithSeasons(container, item, index, icon, cachedImage, isFavS
         `;
     });
     
-    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Favori">${item.fav ? '⭐' : '☆'}</button>`;
+    const favBtn = `<button class="btn-control" onclick="event.stopPropagation(); toggleFavWrapper(${index})" title="Watchlist">${item.fav ? '📋' : '☐'}</button>`;
     cardGroup.innerHTML = `
         <div class="card-group-header" onclick="openDetailPanel(${index})">
             <button class="expand-btn" onclick="event.stopPropagation(); toggleExpandWrapper(${index})" title="Afficher/masquer les saisons">▶</button>
