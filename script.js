@@ -83,23 +83,35 @@ function loadProfiles() {
         localStorage.setItem('animeProfiles', JSON.stringify(profiles));
     }
     
-    // Essayer de charger depuis le cloud
-    loadProfilesFromCloud().catch(err => console.error('Erreur chargement cloud:', err));
-    
-    // Ne pas charger automatiquement un profil, afficher l'écran de sélection
+    // Afficher l'écran de sélection immédiatement
     showProfileSelectionScreen();
+    
+    // Essayer de charger depuis le cloud et rafraîchir l'affichage
+    loadProfilesFromCloud().then(() => {
+        showProfileSelectionScreen(); // Rafraîchir après le chargement cloud
+    }).catch(err => console.error('Erreur chargement cloud:', err));
 }
 
 // Afficher l'écran de sélection de profil
 function showProfileSelectionScreen() {
+    console.log('showProfileSelectionScreen appelée');
+    console.log('Profils disponibles:', profiles);
+    
     const grid = document.getElementById('profileSelectionGrid');
     const screen = document.getElementById('profileSelectionScreen');
     const mainContainer = document.getElementById('mainContainer');
+    
+    if (!grid || !screen || !mainContainer) {
+        console.error('Éléments DOM manquants:', { grid, screen, mainContainer });
+        return;
+    }
     
     screen.style.display = 'flex';
     mainContainer.style.display = 'none';
     
     grid.innerHTML = '';
+    
+    console.log('Création des cartes de profil...');
     
     // Ajouter chaque profil
     Object.values(profiles).forEach(profile => {
@@ -116,7 +128,10 @@ function showProfileSelectionScreen() {
             </div>
         `;
         
-        card.addEventListener('click', () => selectProfileFromScreen(profile.id));
+        card.addEventListener('click', () => {
+            console.log('Clic sur profil:', profile.id, profile.name);
+            selectProfileFromScreen(profile.id);
+        });
         grid.appendChild(card);
     });
     
@@ -130,8 +145,13 @@ function showProfileSelectionScreen() {
             <div class="profile-selection-count">Créer</div>
         </div>
     `;
-    newProfileCard.addEventListener('click', () => createNewProfileFromScreen());
+    newProfileCard.addEventListener('click', () => {
+        console.log('Clic sur nouveau profil');
+        createNewProfileFromScreen();
+    });
     grid.appendChild(newProfileCard);
+    
+    console.log('Cartes créées, total:', grid.children.length);
 }
 
 // Sélectionner un profil depuis l'écran de sélection
