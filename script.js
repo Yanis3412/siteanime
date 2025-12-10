@@ -21,6 +21,20 @@ function loadProfiles() {
     if (savedProfiles) {
         profiles = JSON.parse(savedProfiles);
         
+        // Nettoyer les profils invalides (nom undefined ou manquant)
+        let needsCleaning = false;
+        Object.keys(profiles).forEach(id => {
+            if (!profiles[id] || !profiles[id].name || profiles[id].name === 'undefined') {
+                delete profiles[id];
+                needsCleaning = true;
+            }
+        });
+        
+        if (needsCleaning) {
+            localStorage.setItem('animeProfiles', JSON.stringify(profiles));
+            saveProfiles(); // Synchroniser avec le cloud
+        }
+        
         // S'assurer que le profil par défaut a un mot de passe
         if (profiles['default'] && !profiles['default'].password) {
             profiles['default'].password = '341245';
@@ -79,8 +93,8 @@ function showProfileSelectionScreen() {
     
     grid.innerHTML = '';
     
-    // Ajouter chaque profil
-    Object.values(profiles).forEach(profile => {
+    // Ajouter chaque profil (filtrer les profils invalides)
+    Object.values(profiles).filter(profile => profile && profile.name && profile.name !== 'undefined').forEach(profile => {
         const itemCount = profile.library?.length || 0;
         const card = document.createElement('div');
         card.className = 'profile-selection-card';
@@ -300,8 +314,8 @@ function confirmCreateProfile() {
     const name = document.getElementById('newProfileName').value.trim();
     const password = document.getElementById('newProfilePassword').value.trim();
     
-    if (!name) {
-        alert('Le nom du profil est obligatoire');
+    if (!name || name === 'undefined') {
+        alert('Le nom du profil est obligatoire et doit être valide');
         return;
     }
     
@@ -660,8 +674,8 @@ async function loadProfilesFromCloud() {
         const data = await response.json();
         
         if (data.profiles && Object.keys(data.profiles).length > 0) {
-            // Fusionner avec les profils locaux (le cloud a la priorité)
-            profiles = { ...profiles, ...data.profiles };
+            // Remplacer complètement par les profils du cloud (nettoyer les profils corrompus)
+            profiles = data.profiles;
             localStorage.setItem('animeProfiles', JSON.stringify(profiles));
             console.log('✅ Profils chargés depuis le cloud');
             
