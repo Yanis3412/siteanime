@@ -27,24 +27,6 @@ function loadProfiles() {
             profiles['default'].isAdmin = true;
             localStorage.setItem('animeProfiles', JSON.stringify(profiles));
         }
-        
-        // Créer le profil Aohac s'il n'existe pas
-        const aohacExists = Object.values(profiles).some(p => p.name === 'Aohac');
-        if (!aohacExists) {
-            const aohacId = 'profile_aohac';
-            profiles[aohacId] = {
-                id: aohacId,
-                name: 'Aohac',
-                password: '123456',
-                isAdmin: true,
-                library: [],
-                imageCache: {},
-                malInfoCache: {},
-                lastUpdateCheck: 0,
-                lastKnownTotals: {}
-            };
-            localStorage.setItem('animeProfiles', JSON.stringify(profiles));
-        }
     } else {
         // Migrer les anciennes données vers le profil par défaut
         const oldLibrary = JSON.parse(localStorage.getItem('viegoList')) || [];
@@ -65,17 +47,6 @@ function loadProfiles() {
                 malInfoCache: oldMalInfoCache,
                 lastUpdateCheck: oldLastUpdateCheck,
                 lastKnownTotals: oldLastKnownTotals
-            },
-            'profile_aohac': {
-                id: 'profile_aohac',
-                name: 'Aohac',
-                password: '123456',
-                isAdmin: true,
-                library: [],
-                imageCache: {},
-                malInfoCache: {},
-                lastUpdateCheck: 0,
-                lastKnownTotals: {}
             }
         };
         
@@ -513,15 +484,13 @@ function deleteProfile(profileId) {
     if (confirm('Supprimer ce profil et toutes ses données ?')) {
         delete profiles[profileId];
         
-        // Si c'est le profil actuel, revenir au défaut
-        if (currentProfile === profileId) {
-            currentProfile = 'default';
-            loadCurrentProfile();
-            renderList();
-        }
-        
+        // Sauvegarder et revenir à l'écran de sélection
         saveProfiles();
-        renderProfileList();
+        
+        // Rediriger vers l'écran de sélection
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('profileSelectionScreen').style.display = 'flex';
+        showProfileSelectionScreen();
     }
 }
 
@@ -529,18 +498,18 @@ function deleteProfile(profileId) {
 function changePassword(profileId) {
     const profile = profiles[profileId];
     
-    // Vérifier si l'utilisateur actuel est Aohac (profil admin) ou le propriétaire du profil
-    const canChangePassword = isAdminMode || currentProfile === profileId || profile.name === 'Aohac';
+    // Vérifier si l'utilisateur actuel est admin ou le propriétaire du profil
+    const canChangePassword = isAdminMode || currentProfile === profileId;
     
     if (!canChangePassword && currentProfile !== 'default') {
-        alert('Seul l\'administrateur ou Aohac peut modifier les mots de passe des autres profils');
+        alert('Seul l\'administrateur peut modifier les mots de passe des autres profils');
         return;
     }
     
     const currentPassword = prompt(`Mot de passe actuel de "${profile.name}" :`);
     
     // Si ce n'est pas le profil actuel et pas admin, vérifier le mot de passe actuel
-    if (currentProfile !== profileId && !isAdminMode && profile.name !== 'Aohac') {
+    if (currentProfile !== profileId && !isAdminMode) {
         if (currentPassword !== profile.password) {
             alert('Mot de passe incorrect');
             return;
@@ -575,8 +544,8 @@ function renderProfileList() {
         // L'utilisateur peut changer le mot de passe si :
         // - C'est un admin
         // - C'est son propre profil
-        // - Le profil actuel est Aohac
-        const canChangePassword = isAdminMode || currentProfile === profile.id || profiles[currentProfile]?.name === 'Aohac';
+        // Vérifier si l'utilisateur peut changer le mot de passe
+        const canChangePassword = isAdminMode || currentProfile === profile.id;
         
         return `
             <div class="profile-item ${profile.id === currentProfile ? 'active' : ''}" onclick="switchProfile('${profile.id}')">
