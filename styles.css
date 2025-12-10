@@ -473,88 +473,6 @@ header {
     margin: 0;
 }
 
-/* Styles pour les cartes de recommandations */
-#recommendationsListContainer .card {
-    display: flex;
-    gap: 15px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-
-.card-image {
-    flex-shrink: 0;
-    width: 80px;
-    height: 112px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--bg-color);
-}
-
-.card-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.card-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    background: linear-gradient(135deg, rgba(230, 57, 70, 0.1), rgba(157, 78, 221, 0.1));
-}
-
-.card-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.card-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-main);
-    margin-bottom: 4px;
-}
-
-.card-type {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-}
-
-.card-progress {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.card-progress .progress-bar {
-    flex: 1;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.card-progress .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--primary));
-    transition: width 0.3s ease;
-}
-
-.card-progress .progress-text {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
 .recommendation-badge {
     display: inline-flex;
     align-items: center;
@@ -565,7 +483,6 @@ header {
     font-size: 0.75rem;
     color: var(--accent);
     margin-top: 8px;
-    width: fit-content;
 }
 
 .recommendation-count {

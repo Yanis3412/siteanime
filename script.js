@@ -1164,8 +1164,7 @@ function renderRecommendations() {
         card.className = 'card';
         
         const icon = item.type === 'Anime' ? '📺' : '📖';
-        const cacheKey = `${item.title}-${item.type}`;
-        const cachedImage = imageCache[cacheKey];
+        const cachedImage = imageCache[`${item.title}-${item.type}`];
         
         const totalDisplay = item.total ? item.total : '?';
         const percentage = item.total ? Math.round((item.current / item.total) * 100) : 0;
@@ -1198,27 +1197,7 @@ function renderRecommendations() {
         `;
         
         container.appendChild(card);
-        
-        // Charger l'image si elle n'est pas dans le cache
-        if (!cachedImage) {
-            fetchImageForRecommendation(item.title, item.type);
-        }
     });
-}
-
-// Charger l'image pour une recommandation
-async function fetchImageForRecommendation(title, type) {
-    const cacheKey = `${title}-${type}`;
-    
-    // Vérifier si déjà en cache
-    if (imageCache[cacheKey]) return;
-    
-    try {
-        await searchAndCacheImage(title, type);
-        renderRecommendations(); // Rafraîchir l'affichage
-    } catch (error) {
-        console.error(`Erreur lors du chargement de l'image pour ${title}:`, error);
-    }
 }
 
 // Ajouter une recommandation à sa liste
