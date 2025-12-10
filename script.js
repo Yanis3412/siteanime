@@ -2358,17 +2358,30 @@ function openDetailPanel(index) {
         statusBadge.classList.remove('completed');
     }
     
-    // Progress
-    const current = item.current || 0;
-    const total = item.total || '?';
-    const percent = item.total ? Math.round((current / item.total) * 100) : 0;
+    // Progress - Calculer le total de toutes les saisons si elles existent
+    let displayTotal = item.total || '?';
+    let displayCurrent = item.current || 0;
     
-    document.getElementById('detailProgressCurrent').textContent = current;
-    document.getElementById('detailProgressTotal').textContent = total;
+    // Si l'item a des saisons, calculer le total des épisodes de toutes les saisons
+    if (item.seasons && item.seasons.length > 0) {
+        displayTotal = item.seasons.reduce((sum, season) => {
+            return sum + (season.episodes || 0);
+        }, 0);
+    }
+    
+    // Si l'item a des saisons, calculer la progression totale
+    if (item.seasonProgress && item.seasonProgress.length > 0) {
+        displayCurrent = item.seasonProgress.reduce((sum, progress) => sum + progress, 0);
+    }
+    
+    const percent = displayTotal && displayTotal !== '?' ? Math.round((displayCurrent / displayTotal) * 100) : 0;
+    
+    document.getElementById('detailProgressCurrent').textContent = displayCurrent;
+    document.getElementById('detailProgressTotal').textContent = displayTotal;
     document.getElementById('detailProgressType').textContent = item.type === 'Anime' ? 'épisodes' : 'chapitres';
     document.getElementById('detailProgressPercent').textContent = percent + '%';
     document.getElementById('detailProgressFill').style.width = percent + '%';
-    document.getElementById('detailProgressInput').value = current;
+    document.getElementById('detailProgressInput').value = displayCurrent;
     
     // Note
     document.getElementById('detailNote').value = item.note || '';
