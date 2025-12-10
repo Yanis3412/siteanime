@@ -505,6 +505,14 @@ async function importProfiles() {
 
 // Renommer un profil
 function renameProfile(profileId) {
+    // Vérifier les permissions
+    const canRename = isAdminMode || currentProfile === profileId;
+    
+    if (!canRename) {
+        alert('Seul l\'administrateur peut renommer les profils des autres utilisateurs');
+        return;
+    }
+    
     editingProfileId = profileId;
     const profile = profiles[profileId];
     document.getElementById('profileNameInput').value = profile.name;
@@ -529,6 +537,14 @@ function saveProfileName() {
 function deleteProfile(profileId) {
     if (profileId === 'default') {
         alert('Impossible de supprimer le profil par défaut');
+        return;
+    }
+    
+    // Vérifier les permissions
+    const canDelete = isAdminMode || currentProfile === profileId;
+    
+    if (!canDelete) {
+        alert('Seul l\'administrateur peut supprimer les profils des autres utilisateurs');
         return;
     }
     
@@ -592,10 +608,10 @@ function changePassword(profileId) {
 function renderProfileList() {
     const profileList = document.getElementById('profileList');
     profileList.innerHTML = Object.values(profiles).map(profile => {
-        // L'utilisateur peut changer le mot de passe si :
+        // L'utilisateur peut modifier/supprimer un profil si :
         // - C'est un admin
         // - C'est son propre profil
-        // Vérifier si l'utilisateur peut changer le mot de passe
+        const canModify = isAdminMode || currentProfile === profile.id;
         const canChangePassword = isAdminMode || currentProfile === profile.id;
         
         return `
@@ -605,9 +621,9 @@ function renderProfileList() {
                     <span class="profile-item-count">${profile.library?.length || 0} éléments</span>
                 </div>
                 <div class="profile-item-actions" onclick="event.stopPropagation()">
-                    <button class="profile-item-btn" onclick="renameProfile('${profile.id}')" title="Renommer">✏️</button>
+                    ${canModify ? `<button class="profile-item-btn" onclick="renameProfile('${profile.id}')" title="Renommer">✏️</button>` : ''}
                     ${canChangePassword ? `<button class="profile-item-btn" onclick="changePassword('${profile.id}')" title="Changer le mot de passe">🔑</button>` : ''}
-                    ${profile.id !== 'default' ? `<button class="profile-item-btn delete" onclick="deleteProfile('${profile.id}')" title="Supprimer">🗑️</button>` : ''}
+                    ${profile.id !== 'default' && canModify ? `<button class="profile-item-btn delete" onclick="deleteProfile('${profile.id}')" title="Supprimer">🗑️</button>` : ''}
                 </div>
             </div>
         `;
