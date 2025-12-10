@@ -513,6 +513,7 @@ header {
 /* Styles pour les cartes de recommandations */
 #recommendationsListContainer .card {
     display: flex;
+    flex-direction: row-reverse;
     gap: 12px;
     align-items: flex-start;
     background: var(--card-bg);
