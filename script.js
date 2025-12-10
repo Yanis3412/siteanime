@@ -426,17 +426,17 @@ function exportProfiles() {
 }
 
 // Importer un profil
-function importProfiles() {
+async function importProfiles() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json';
     
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
                 const importedData = JSON.parse(event.target.result);
                 
