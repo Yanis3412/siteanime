@@ -1234,6 +1234,15 @@ function renderRecommendations() {
         `;
         
         container.appendChild(card);
+        
+        // Charger l'image si elle n'est pas en cache
+        const cacheKey = `${item.title}-${item.type}`;
+        if (!imageCache[cacheKey]) {
+            fetchCardImage(item.title, item.type, null, () => {
+                // Mettre à jour l'image si elle vient de se charger
+                renderRecommendations();
+            });
+        }
     });
 }
 
