@@ -2420,8 +2420,11 @@ async function detailUpdateProgress(change) {
 
 function detailSetProgress(value) {
     if (currentDetailIndex === null) return;
-    setProgress(currentDetailIndex, value).then(() => {
+    const newValue = parseInt(value) || 0;
+    library[currentDetailIndex].current = newValue;
+    saveData().then(() => {
         openDetailPanel(currentDetailIndex);
+        renderList();
     });
 }
 
