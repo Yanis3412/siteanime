@@ -39,6 +39,46 @@
         </div>
     </div>
 
+    <!-- Modal de création de profil -->
+    <div class="modal-overlay" id="createProfileModal">
+        <div class="modal">
+            <h3>➞️ Nouveau profil</h3>
+            <div class="modal-input-group">
+                <label>Nom du profil</label>
+                <input type="text" id="newProfileName" placeholder="Mon profil">
+            </div>
+            <div class="modal-input-group">
+                <label>Mot de passe (6 chiffres maximum)</label>
+                <input type="password" id="newProfilePassword" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric">
+                <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">Ce mot de passe sera requis pour modifier ce profil</small>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCreateProfileModal()">Annuler</button>
+                <button class="modal-btn modal-btn-save" onclick="confirmCreateProfile()">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de création de profil -->
+    <div class="modal-overlay" id="createProfileModal">
+        <div class="modal">
+            <h3>➕ Nouveau profil</h3>
+            <div class="modal-input-group">
+                <label>Nom du profil</label>
+                <input type="text" id="newProfileName" placeholder="Mon profil">
+            </div>
+            <div class="modal-input-group">
+                <label>Mot de passe (6 chiffres maximum)</label>
+                <input type="password" id="newProfilePassword" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric">
+                <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">Ce mot de passe sera requis pour modifier ce profil</small>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCreateProfileModal()">Annuler</button>
+                <button class="modal-btn modal-btn-save" onclick="confirmCreateProfile()">Créer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container" id="mainContainer" style="display: none;">
         <header>
             <h1>Liste Manga/Anime</h1>
@@ -79,26 +119,6 @@
                 <div class="modal-buttons">
                     <button class="modal-btn modal-btn-cancel" onclick="closeProfileModal()">Annuler</button>
                     <button class="modal-btn modal-btn-save" onclick="saveProfileName()">Sauvegarder</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de création de profil -->
-        <div class="modal-overlay" id="createProfileModal">
-            <div class="modal">
-                <h3>➕ Nouveau profil</h3>
-                <div class="modal-input-group">
-                    <label>Nom du profil</label>
-                    <input type="text" id="newProfileName" placeholder="Mon profil">
-                </div>
-                <div class="modal-input-group">
-                    <label>Mot de passe (6 chiffres maximum)</label>
-                    <input type="password" id="newProfilePassword" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric">
-                    <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">Ce mot de passe sera requis pour modifier ce profil</small>
-                </div>
-                <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-cancel" onclick="closeCreateProfileModal()">Annuler</button>
-                    <button class="modal-btn modal-btn-save" onclick="confirmCreateProfile()">Créer</button>
                 </div>
             </div>
         </div>
