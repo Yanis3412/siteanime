@@ -1238,10 +1238,13 @@ function renderRecommendations() {
         // Charger l'image si elle n'est pas en cache
         const cacheKey = `${item.title}-${item.type}`;
         if (!imageCache[cacheKey]) {
-            fetchCardImage(item.title, item.type, null, () => {
-                // Mettre à jour l'image si elle vient de se charger
-                renderRecommendations();
-            });
+            searchAndCacheImage(item.title, item.type).then(() => {
+                // Mettre à jour l'image une fois chargée
+                const img = card.querySelector('.card-image');
+                if (img && imageCache[cacheKey]) {
+                    img.innerHTML = `<img src="${imageCache[cacheKey]}" alt="${item.title}">`;
+                }
+            }).catch(err => console.error('Erreur chargement image:', err));
         }
     });
 }
