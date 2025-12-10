@@ -477,9 +477,17 @@ async function importProfiles() {
                     profiles[currentProfile].lastUpdateCheck = profileToImport.lastUpdateCheck || 0;
                     profiles[currentProfile].lastKnownTotals = profileToImport.lastKnownTotals || {};
                     
+                    // Sauvegarder localement
                     localStorage.setItem('animeProfiles', JSON.stringify(profiles));
-                    await saveProfiles(); // Synchroniser avec le cloud
                     
+                    // Sauvegarder dans le cloud
+                    try {
+                        await saveProfilesToCloud();
+                    } catch (err) {
+                        console.error('Erreur sync cloud:', err);
+                    }
+                    
+                    // Actualiser l'affichage
                     loadCurrentProfile();
                     renderList();
                     alert(`Profil "${profileName}" importé avec succès ! 📥\n${profileToImport.library?.length || 0} éléments restaurés.`);
