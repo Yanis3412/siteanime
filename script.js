@@ -2414,14 +2414,52 @@ function closeDetailPanel() {
 
 async function detailUpdateProgress(change) {
     if (currentDetailIndex === null) return;
-    await updateProgress(currentDetailIndex, change);
-    openDetailPanel(currentDetailIndex); // Refresh panel
+    const item = library[currentDetailIndex];
+    
+    // Si l'anime a plusieurs saisons, mettre à jour seasonProgress
+    if (item.seasons && item.seasons.length > 0) {
+        // Ajouter le changement à la première saison (ou la saison avec du contenu)
+        if (!item.seasonProgress) {
+            item.seasonProgress = new Array(item.seasons.length).fill(0);
+        }
+        item.seasonProgress[0] = (item.seasonProgress[0] || 0) + change;
+        
+        // Empêcher de dépasser le total
+        if (item.seasonProgress[0] < 0) item.seasonProgress[0] = 0;
+        if (item.seasons[0].episodes && item.seasonProgress[0] > item.seasons[0].episodes) {
+            item.seasonProgress[0] = item.seasons[0].episodes;
+        }
+    } else {
+        // Sinon, utiliser item.current comme avant
+        await updateProgress(currentDetailIndex, change);
+    }
+    
+    await saveData();
+    openDetailPanel(currentDetailIndex);
+    renderList();
 }
 
 function detailSetProgress(value) {
     if (currentDetailIndex === null) return;
+    const item = library[currentDetailIndex];
     const newValue = parseInt(value) || 0;
-    library[currentDetailIndex].current = newValue;
+    
+    // Si l'anime a plusieurs saisons, mettre à jour seasonProgress
+    if (item.seasons && item.seasons.length > 0) {
+        if (!item.seasonProgress) {
+            item.seasonProgress = new Array(item.seasons.length).fill(0);
+        }
+        item.seasonProgress[0] = newValue;
+        
+        // Empêcher de dépasser le total de la première saison
+        if (item.seasons[0].episodes && item.seasonProgress[0] > item.seasons[0].episodes) {
+            item.seasonProgress[0] = item.seasons[0].episodes;
+        }
+    } else {
+        // Sinon, utiliser item.current
+        item.current = newValue;
+    }
+    
     saveData().then(() => {
         openDetailPanel(currentDetailIndex);
         renderList();
