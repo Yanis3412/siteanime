@@ -510,6 +510,95 @@ header {
     box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
 }
 
+/* Styles pour les cartes de recommandations */
+#recommendationsListContainer .card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+#recommendationsListContainer .card-image {
+    flex-shrink: 0;
+    width: 60px;
+    height: 85px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-color);
+}
+
+#recommendationsListContainer .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#recommendationsListContainer .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#recommendationsListContainer .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+#recommendationsListContainer .card-type {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+#recommendationsListContainer .card-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#recommendationsListContainer .card-progress .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+#recommendationsListContainer .card-progress .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--primary));
+}
+
+#recommendationsListContainer .card-progress .progress-text {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+#recommendationsListContainer .recommendation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: rgba(157, 78, 221, 0.15);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: var(--accent);
+    width: fit-content;
+}
+
+#recommendationsListContainer .add-recommendation-btn {
+    width: 100%;
+    padding: 8px;
+    margin-top: 0;
+    font-size: 0.85rem;
+}
+
 /* Check new releases button */
 .check-new-btn {
     background: linear-gradient(135deg, rgba(230, 57, 70, 0.2), rgba(157, 78, 221, 0.2));
