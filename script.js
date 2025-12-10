@@ -440,34 +440,49 @@ async function importProfiles() {
             try {
                 const importedData = JSON.parse(event.target.result);
                 
-                // Vérifier que c'est bien un export de profil valide
-                if (!importedData.profile || !importedData.profileName) {
+                let profileToImport = null;
+                let profileName = '';
+                
+                // Vérifier si c'est le nouveau format (avec profile et profileName)
+                if (importedData.profile && importedData.profileName) {
+                    profileToImport = importedData.profile;
+                    profileName = importedData.profileName;
+                } 
+                // Ou l'ancien format (objet de profils direct)
+                else if (importedData.default && importedData.default.library !== undefined) {
+                    // C'est un ancien export avec tous les profils
+                    alert('Format ancien détecté. Utilise le bouton Exporter pour créer un nouveau fichier compatible.');
+                    return;
+                }
+                // Ou un seul profil sans wrapper
+                else if (importedData.library !== undefined && importedData.name) {
+                    profileToImport = importedData;
+                    profileName = importedData.name;
+                } else {
                     alert('Fichier invalide ! Le fichier doit être un export de profil valide.');
                     return;
                 }
                 
-                const profileName = importedData.profileName;
                 const confirmed = confirm(
                     `Importer le profil "${profileName}" ?\n\n` +
-                    `Date d'export : ${new Date(importedData.exportDate).toLocaleDateString('fr-FR')}\n` +
-                    `Éléments : ${importedData.profile.library?.length || 0}\n\n` +
+                    `Éléments : ${profileToImport.library?.length || 0}\n\n` +
                     `⚠️ Cela remplacera les données actuelles de ton profil "${profiles[currentProfile].name}".`
                 );
                 
                 if (confirmed) {
                     // Remplacer les données du profil actuel
-                    profiles[currentProfile].library = importedData.profile.library || [];
-                    profiles[currentProfile].imageCache = importedData.profile.imageCache || {};
-                    profiles[currentProfile].malInfoCache = importedData.profile.malInfoCache || {};
-                    profiles[currentProfile].lastUpdateCheck = importedData.profile.lastUpdateCheck || 0;
-                    profiles[currentProfile].lastKnownTotals = importedData.profile.lastKnownTotals || {};
+                    profiles[currentProfile].library = profileToImport.library || [];
+                    profiles[currentProfile].imageCache = profileToImport.imageCache || {};
+                    profiles[currentProfile].malInfoCache = profileToImport.malInfoCache || {};
+                    profiles[currentProfile].lastUpdateCheck = profileToImport.lastUpdateCheck || 0;
+                    profiles[currentProfile].lastKnownTotals = profileToImport.lastKnownTotals || {};
                     
                     localStorage.setItem('animeProfiles', JSON.stringify(profiles));
                     await saveProfiles(); // Synchroniser avec le cloud
                     
                     loadCurrentProfile();
                     renderList();
-                    alert(`Profil "${profileName}" importé avec succès ! 📥\n${importedData.profile.library?.length || 0} éléments restaurés.`);
+                    alert(`Profil "${profileName}" importé avec succès ! 📥\n${profileToImport.library?.length || 0} éléments restaurés.`);
                 }
             } catch (error) {
                 alert('Erreur lors de la lecture du fichier. Assure-toi que c\'est un fichier JSON valide.');
