@@ -543,6 +543,46 @@ header {
     animation: pulse 1.5s infinite;
 }
 
+/* Backup buttons */
+.backup-btn {
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(199, 125, 255, 0.2));
+    border: 1px solid rgba(157, 78, 221, 0.3);
+    color: var(--text-main);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backup-btn:hover {
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.3), rgba(199, 125, 255, 0.3));
+    border-color: rgba(157, 78, 221, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+}
+
+.backup-info {
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.1), rgba(230, 57, 70, 0.1));
+    border: 1px solid rgba(157, 78, 221, 0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backup-info strong {
+    color: var(--text-main);
+}
+
 /* Notifications Popup */
 .notifications-overlay {
     position: fixed;

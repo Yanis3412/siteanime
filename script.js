@@ -409,8 +409,7 @@ function exportProfiles() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    alert('Profils exportés avec succès ! 📤\nTransfère ce fichier sur ton autre PC.');
-    toggleProfileMenu();
+    alert('Profils exportés avec succès ! 📤\nConserve ce fichier précieusement pour éviter toute perte de données.');
 }
 
 // Importer les profils
@@ -463,7 +462,6 @@ function importProfiles() {
     };
     
     input.click();
-    toggleProfileMenu();
 }
 
 // Renommer un profil
