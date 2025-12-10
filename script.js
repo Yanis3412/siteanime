@@ -21,18 +21,11 @@ function loadProfiles() {
     if (savedProfiles) {
         profiles = JSON.parse(savedProfiles);
         
-        // Nettoyer les profils invalides (nom undefined ou manquant)
-        let needsCleaning = false;
-        Object.keys(profiles).forEach(id => {
-            if (!profiles[id] || !profiles[id].name || profiles[id].name === 'undefined') {
-                delete profiles[id];
-                needsCleaning = true;
-            }
-        });
-        
-        if (needsCleaning) {
+        // Nettoyer les profils invalides
+        const hadInvalidProfiles = cleanInvalidProfiles();
+        if (hadInvalidProfiles) {
             localStorage.setItem('animeProfiles', JSON.stringify(profiles));
-            saveProfiles(); // Synchroniser avec le cloud
+            console.log('🧹 Profils invalides supprimés au chargement');
         }
         
         // S'assurer que le profil par défaut a un mot de passe
@@ -258,7 +251,22 @@ function updateUIForMode() {
 }
 
 // Sauvegarder les profils
+// Nettoyer les profils invalides
+function cleanInvalidProfiles() {
+    let needsCleaning = false;
+    Object.keys(profiles).forEach(id => {
+        if (!profiles[id] || !profiles[id].name || profiles[id].name === 'undefined' || profiles[id].name?.trim() === '') {
+            delete profiles[id];
+            needsCleaning = true;
+        }
+    });
+    return needsCleaning;
+}
+
 function saveProfiles() {
+    // Nettoyer les profils invalides avant de sauvegarder
+    const hadInvalidProfiles = cleanInvalidProfiles();
+    
     // Sauvegarder les données du profil actuel
     profiles[currentProfile] = {
         ...profiles[currentProfile],
@@ -727,8 +735,12 @@ async function loadProfilesFromCloud() {
         const data = await response.json();
         
         if (data.profiles && Object.keys(data.profiles).length > 0) {
-            // Remplacer complètement par les profils du cloud (nettoyer les profils corrompus)
+            // Remplacer complètement par les profils du cloud
             profiles = data.profiles;
+            
+            // Nettoyer les profils invalides reçus du cloud
+            cleanInvalidProfiles();
+            
             localStorage.setItem('animeProfiles', JSON.stringify(profiles));
             console.log('✅ Profils chargés depuis le cloud');
             
