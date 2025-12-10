@@ -1641,6 +1641,33 @@ async function fetchCardImage(title, type, index) {
     }
 }
 
+// Chercher et mettre en cache une image (sans index)
+async function searchAndCacheImage(title, type) {
+    const cacheKey = `${title}-${type}`;
+    
+    // Vérifier si déjà en cache
+    if (imageCache[cacheKey]) {
+        return imageCache[cacheKey];
+    }
+    
+    try {
+        const searchType = type === 'Anime' ? 'anime' : 'manga';
+        const response = await fetch(`https://api.jikan.moe/v4/${searchType}?q=${encodeURIComponent(title)}&limit=1`);
+        const data = await response.json();
+        
+        if (data.data && data.data.length > 0) {
+            const imageUrl = data.data[0].images.jpg.large_image_url || data.data[0].images.jpg.image_url;
+            imageCache[cacheKey] = imageUrl;
+            localStorage.setItem('imageCache', JSON.stringify(imageCache));
+            return imageUrl;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching image:', error);
+        return null;
+    }
+}
+
 async function addItem() {
     const titleInput = document.getElementById('inputTitle');
     const typeInput = document.getElementById('inputType');
