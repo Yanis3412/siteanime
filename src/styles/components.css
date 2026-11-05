@@ -72,6 +72,15 @@
     width: 38px;
     padding: 0;
 }
+.btn--sm {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: var(--fs-sm);
+}
+.btn--icon.btn--sm {
+    width: 32px;
+    padding: 0;
+}
 .btn--block {
     width: 100%;
 }
@@ -303,6 +312,22 @@
     background: var(--accent);
     border-radius: inherit;
     transition: width 240ms var(--ease);
+}
+
+.meter--thin {
+    height: 3px;
+}
+
+/* Encadré d'information */
+.notice {
+    display: grid;
+    gap: 4px;
+    padding: var(--s4);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-panel);
+}
+.notice .muted {
+    font-size: var(--fs-sm);
 }
 
 /* ---------- Couvertures ---------- */

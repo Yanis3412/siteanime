@@ -37,6 +37,7 @@ function upstashAdapter(redis) {
         },
         del: (...keys) => (keys.length ? redis.del(...keys) : Promise.resolve(0)),
         incr: (key) => redis.incr(key),
+        incrby: (key, n) => redis.incrby(key, n),
         expire: (key, seconds) => redis.expire(key, seconds),
         sadd: (key, ...members) => redis.sadd(key, members[0], ...members.slice(1)),
         srem: (key, ...members) => redis.srem(key, ...members),
@@ -96,6 +97,13 @@ function fileAdapter(file) {
         async incr(key) {
             const entry = alive(key);
             const next = (entry ? Number(entry.value) : 0) + 1;
+            data[key] = { value: next, exp: entry?.exp ?? null };
+            persist();
+            return next;
+        },
+        async incrby(key, n) {
+            const entry = alive(key);
+            const next = (entry ? Number(entry.value) : 0) + n;
             data[key] = { value: next, exp: entry?.exp ?? null };
             persist();
             return next;
