@@ -777,3 +777,243 @@
 .site:hover .site__arrow {
     color: var(--accent);
 }
+
+/* ---------- Chapitres d'un manga ---------- */
+.chapters {
+    display: grid;
+    gap: var(--s3);
+}
+.chapters__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--s3);
+}
+.chapters__head .section-title {
+    margin: 0;
+}
+.chapters__count {
+    color: var(--text-faint);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+.chapters__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+}
+.chapters__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.chapters__list {
+    display: grid;
+    border-top: 1px solid var(--line);
+}
+.chapter {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    border-bottom: 1px solid var(--line);
+}
+.chapter__link {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px var(--s3);
+    padding: 11px var(--s2);
+    margin-left: calc(-1 * var(--s2));
+    border-radius: 6px;
+}
+.chapter__link:hover {
+    background: var(--bg-hover);
+}
+.chapter__num {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.chapter.is-read .chapter__num {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.chapter__title {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 40ch;
+}
+.chapter__meta {
+    font-size: var(--fs-sm);
+    color: var(--text-faint);
+}
+.chapter__state {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.chapter__state.is-new {
+    color: var(--accent);
+}
+.chapter__state.is-started {
+    color: var(--ongoing);
+}
+.chapter__state.is-read {
+    color: var(--text-faint);
+    font-weight: 500;
+}
+.chapters__more {
+    justify-self: start;
+}
+.storage {
+    display: grid;
+    gap: 6px;
+    margin-top: var(--s2);
+    font-size: var(--fs-sm);
+}
+.storage__text {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--s2);
+}
+
+/* ---------- Import de chapitres ---------- */
+.import {
+    display: grid;
+    gap: var(--s3);
+}
+.dropzone {
+    display: grid;
+    justify-items: center;
+    gap: var(--s3);
+    padding: var(--s6) var(--s4);
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--r-panel);
+    text-align: center;
+    color: var(--text-muted);
+    transition: border-color 120ms var(--ease), background-color 120ms var(--ease);
+}
+.dropzone.is-over {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+.dropzone--compact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: var(--s3) var(--s4);
+    text-align: left;
+}
+.dropzone--compact .dropzone__text {
+    flex: 1 1 160px;
+}
+.dropzone__text {
+    max-width: 40ch;
+}
+.dropzone__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--s2);
+}
+.import__warn {
+    font-size: var(--fs-sm);
+    color: var(--danger);
+}
+.import__list {
+    display: grid;
+    max-height: min(46vh, 420px);
+    overflow-y: auto;
+    border-top: 1px solid var(--line);
+}
+.import__row {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+.import__info {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+.import__name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.import__meta {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.import__note {
+    font-size: var(--fs-xs);
+    color: var(--accent);
+}
+.import__error {
+    font-size: var(--fs-xs);
+    color: var(--danger);
+}
+.import__num {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.import__num .input {
+    width: 84px;
+    min-height: 34px;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.import__state {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+}
+.import__state--done {
+    color: var(--completed);
+}
+.import__state--error {
+    color: var(--danger);
+}
+.import__state--working {
+    color: var(--text-muted);
+}
+.import__row.is-error .import__meta {
+    color: var(--danger);
+}
+.import__summary {
+    margin-right: auto;
+    align-self: center;
+    font-weight: 600;
+}
+.import__hint {
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    text-align: right;
+}
+@media (max-width: 520px) {
+    .import__row {
+        flex-wrap: wrap;
+    }
+}

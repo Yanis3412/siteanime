@@ -3,9 +3,10 @@ import { useCallback, useMemo } from 'react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { fetchSeasons, findEntry, summarize } from '../lib/jikan.js';
+import { api } from '../lib/api.js';
 
 export function useItemActions() {
-    const { updateItem, removeItem } = useApp();
+    const { updateItem, removeItem, session, writeTokenFor } = useApp();
     const { toast, confirm } = useUi();
 
     const refresh = useCallback(
@@ -53,10 +54,14 @@ export function useItemActions() {
             if (ok) {
                 removeItem(item.id);
                 toast(`${item.title} supprimé.`);
+                // Les chapitres importés pour ce titre sont effacés du stockage.
+                if (item.type === 'Manga' && session) {
+                    api.chapters.removeAll(session.profileId, item.id, writeTokenFor(session.profileId)).catch(() => {});
+                }
             }
             return ok;
         },
-        [confirm, removeItem, toast],
+        [confirm, removeItem, toast, session, writeTokenFor],
     );
 
     return useMemo(

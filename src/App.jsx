@@ -6,6 +6,7 @@ import { LibraryPage } from './pages/LibraryPage.jsx';
 import { ItemPage } from './pages/ItemPage.jsx';
 import { RecommendationsPage } from './pages/RecommendationsPage.jsx';
 import { SitesPage } from './pages/SitesPage.jsx';
+import { ReaderPage } from './pages/ReaderPage.jsx';
 
 function RequireProfile({ children }) {
     const { session, hasEntered } = useApp();
@@ -48,6 +49,14 @@ export function App() {
                 <Route path="/sites" element={<SitesPage />} />
                 <Route path="/oeuvre/:id" element={<ItemPage />} />
             </Route>
+            <Route
+                path="/oeuvre/:id/chapitre/:num"
+                element={
+                    <RequireProfile>
+                        <ReaderPage />
+                    </RequireProfile>
+                }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );

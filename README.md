@@ -17,7 +17,8 @@ Les infos (couvertures, nombre de chapitres/épisodes, saisons, sorties) viennen
 ```
 index.html            Point d'entrée Vite
 src/
-  App.jsx             Routes (/mangas, /animes, /watchlist, /recommandations, /sites, /oeuvre/:id)
+  App.jsx             Routes (/mangas, /animes, /watchlist, /recommandations, /sites, /oeuvre/:id,
+                      /oeuvre/:id/chapitre/:num pour la liseuse)
   state/              État global (profils, session, enregistrement automatique), toasts et thème
   pages/              Écrans
   components/         Barre du haut, cartes, dialogues…
@@ -28,6 +29,7 @@ api/                  Fonctions serverless Vercel
   profile.js          Renommer, changer le code, supprimer
   session.js          Connexion / déconnexion
   library.js          Lecture et enregistrement d'une liste
+  chapters.js         Chapitres importés : liste, envoi, lecture, suppression
   admin.js            Réimport des données de l'ancienne version (admin)
   _lib/               Stockage, sécurité, modèle de données (non exposé)
 scripts/dev-seed.mjs  Fausses données pour tester en local
@@ -55,6 +57,48 @@ Chacun garde son code.
 
 Elles doivent être actives pour **Production** et **Preview** (Settings → Environment Variables).
 
+## Chapitres de manga (Cloudflare R2)
+
+Sur la page d'un manga, la section **Chapitres** permet d'importer ses propres fichiers
+(CBZ, ZIP, PDF, dossiers d'images ; les CBR/RAR ne sont pas pris en charge) et de les lire dans la liseuse :
+page par page ou en défilement, sens japonais ou occidental, plein écran, reprise à la dernière page.
+Finir un chapitre met à jour la progression du titre. Les chapitres de chaque profil sont privés.
+
+Les images sont envoyées directement du navigateur vers R2 grâce à des liens signés valables quelques minutes
+(Vercel ne sert que de guichet). Les pages PNG trop lourdes sont converties en WebP avant l'envoi.
+Le site refuse les imports au-delà de 9,5 Go au total, pour rester dans l'offre gratuite de R2 (10 Go).
+
+### Mise en place
+
+1. Créer un compte Cloudflare et activer R2.
+2. Créer un bucket, par exemple `liste-chapitres`.
+3. Dans les réglages du bucket, ajouter cette règle CORS :
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://liste-blue.vercel.app", "https://liste-git-refonte-aohacs-projects.vercel.app", "http://localhost:5173"],
+       "AllowedMethods": ["GET", "PUT", "HEAD"],
+       "AllowedHeaders": ["content-type"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+4. Créer un jeton d'API R2 avec les droits « lecture et écriture d'objets », limité à ce bucket.
+   Noter l'Access Key ID, la Secret Access Key et l'Account ID.
+5. Ajouter dans Vercel (Production et Preview) :
+
+   | Variable | Valeur |
+   | --- | --- |
+   | `R2_ACCOUNT_ID` | Account ID Cloudflare |
+   | `R2_ACCESS_KEY_ID` | Access Key ID du jeton |
+   | `R2_SECRET_ACCESS_KEY` | Secret Access Key du jeton |
+   | `R2_BUCKET` | Nom du bucket |
+   | `R2_MAX_BYTES` | Optionnel : limite totale en octets (9,5 Go par défaut) |
+
+6. Redéployer. Tant que ces variables manquent, la section Chapitres l'indique simplement.
+
 ## Mise en ligne de la refonte
 
 1. Tester l'URL de preview de la branche `refonte`.
@@ -71,7 +115,8 @@ npm run seed:dev   # fausses données (codes : Admin 1111, Sam 2222)
 npm run dev        # http://localhost:5173
 ```
 
-Sans variables Upstash, les fonctions `/api` utilisent un faux stockage dans `.dev-kv.json`.
+Sans variables Upstash, les fonctions `/api` utilisent un faux stockage dans `.dev-kv.json`,
+et sans variables R2 les pages de chapitres sont rangées dans `.dev-blobs/`.
 
 ## Licence
 

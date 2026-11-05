@@ -6,6 +6,7 @@ import { useApp } from '../state/app.jsx';
 import { useItemActions } from '../hooks/useItemActions.js';
 import { Cover } from '../components/ui/Cover.jsx';
 import { Dialog } from '../components/ui/Dialog.jsx';
+import { ChaptersSection } from '../components/ChaptersSection.jsx';
 import { getEntry } from '../lib/jikan.js';
 import {
     percentOf,
@@ -172,6 +173,8 @@ export function ItemPage() {
                             </button>
                         </div>
                     )}
+
+                    {item.type === 'Manga' && !readOnly && <ChaptersSection item={item} />}
 
                     <NoteField item={item} readOnly={readOnly} />
                     <Synopsis item={item} />

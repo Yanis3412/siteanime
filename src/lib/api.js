@@ -32,6 +32,8 @@ async function request(method, path, { token, body } = {}) {
     return data;
 }
 
+const qs = (params) => new URLSearchParams(params).toString();
+
 export const api = {
     listProfiles: () => request('GET', 'profiles'),
     createProfile: (name, pin) => request('POST', 'profiles', { body: { name, pin } }),
@@ -45,6 +47,17 @@ export const api = {
     getLibrary: (id) => request('GET', `library?id=${encodeURIComponent(id)}`),
     saveLibrary: (id, payload, token) => request('PUT', `library?id=${encodeURIComponent(id)}`, { body: payload, token }),
     getRecommendations: () => request('GET', 'library?recommended=1'),
+
+    chapters: {
+        list: (profileId, itemId, token) => request('GET', `chapters?${qs({ profileId, itemId })}`, { token }),
+        get: (profileId, itemId, num, token) => request('GET', `chapters?${qs({ profileId, itemId, num })}`, { token }),
+        prepare: (payload, token) => request('POST', 'chapters', { body: { action: 'prepare', ...payload }, token }),
+        commit: (uploadId, token) => request('POST', 'chapters', { body: { action: 'commit', uploadId }, token }),
+        abort: (uploadId, token) => request('POST', 'chapters', { body: { action: 'abort', uploadId }, token }),
+        update: (payload, token) => request('PATCH', 'chapters', { body: payload, token }),
+        remove: (profileId, itemId, num, token) => request('DELETE', `chapters?${qs({ profileId, itemId, num })}`, { token }),
+        removeAll: (profileId, itemId, token) => request('DELETE', `chapters?${qs({ profileId, itemId, all: 1 })}`, { token }),
+    },
 
     adminStatus: (token) => request('GET', 'admin', { token }),
     adminReimport: (token) => request('POST', 'admin', { body: { action: 'reimport' }, token }),

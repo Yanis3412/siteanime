@@ -83,6 +83,37 @@ export function setSeasonProgress(item, seasonIndex, value) {
     return { ...item, seasonProgress: progress };
 }
 
+// Un chapitre est lu s'il a été marqué comme tel, ou s'il est avant la progression du titre
+// (sauf s'il a été explicitement marqué « non lu »).
+export function isChapterRead(chapter, item) {
+    if (chapter.read === true) return true;
+    if (chapter.read === false) return false;
+    return chapter.num <= (item?.current || 0);
+}
+
+// Après la lecture du chapitre `num`, la progression avance au moins jusqu'à lui.
+export function progressAfterReading(item, num) {
+    const reached = Math.floor(num);
+    if (item.seasons?.length || reached <= (item.current || 0)) return item;
+    const total = item.total && reached > item.total ? reached : item.total;
+    return { ...item, current: reached, total };
+}
+
+// Plages de chapitres manquants entre le premier et le dernier importés : "1150–1152, 1160".
+export function missingRanges(nums, limit = 6) {
+    const ints = [...new Set(nums.map(Math.floor))].sort((a, b) => a - b);
+    const ranges = [];
+    for (let i = 1; i < ints.length; i++) {
+        if (ints[i] - ints[i - 1] > 1) ranges.push([ints[i - 1] + 1, ints[i] - 1]);
+    }
+    const count = ranges.reduce((n, [a, b]) => n + (b - a + 1), 0);
+    const text = ranges
+        .slice(0, limit)
+        .map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`))
+        .join(', ');
+    return { count, text: ranges.length > limit ? `${text}…` : text };
+}
+
 export const sameWork = (a, b) =>
     a.type === b.type && ((a.malId && b.malId && a.malId === b.malId) || a.title.toLowerCase() === b.title.toLowerCase());
 
