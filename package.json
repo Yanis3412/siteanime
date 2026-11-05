@@ -1,17 +1,26 @@
 {
+  "name": "liste-anime-manga",
+  "private": true,
+  "version": "2.0.0",
   "type": "module",
-  "name": "anime-manga-list",
-  "version": "1.0.0",
-  "description": "Liste de suivi pour Mangas et Animes avec données persistantes",
-  "main": "index.html",
+  "description": "Suivi de mangas et d'animes entre potes, avec profils protégés",
   "scripts": {
-    "dev": "python -m http.server 8000",
-    "build": "echo 'Static site - no build needed'"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "seed:dev": "node scripts/dev-seed.mjs"
   },
-  "keywords": ["anime", "manga", "list"],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "@upstash/redis": "^1.28.4"
-  }
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@upstash/redis": "^1.34.0",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  },
+  "license": "MIT"
 }

@@ -1,0 +1,92 @@
+/* Design tokens : couleurs, typographie, espacements, rayons.
+   Thème sombre par défaut ; le thème clair redéfinit les couleurs. */
+
+:root {
+    /* Couleurs — thème sombre (graphite, papier, or) */
+    --bg: #15171c;
+    --bg-raised: #1c1f25;
+    --bg-sunken: #101216;
+    --bg-hover: #23262e;
+    --line: #2a2e36;
+    --line-strong: #3b404b;
+    --text: #eceae4;
+    --text-muted: #a1a3ab;
+    --text-faint: #6f737d;
+    --accent: #e3b341;
+    --accent-hover: #edc35e;
+    --accent-text: #1d1704;
+    --accent-soft: rgb(227 179 65 / 0.14);
+    --danger: #f2786d;
+    --danger-soft: rgb(242 120 109 / 0.12);
+    --ongoing: #7fb8f0;
+    --completed: #7fd3a1;
+    --cover-bg: #23262d;
+    --backdrop: rgb(6 7 10 / 0.66);
+    --shadow-pop: 0 18px 48px rgb(0 0 0 / 0.5), 0 0 0 1px var(--line);
+    --focus: #e3b341;
+    --toast-danger: #c0392b;
+    --toast-success: #1f8a4c;
+
+    /* Typographie : Archivo, une seule famille dont on fait varier la largeur */
+    --font: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --wdth-condensed: 72%;
+    --wdth-semi: 88%;
+    --fs-xs: 0.75rem;   /* 12 */
+    --fs-sm: 0.8125rem; /* 13 */
+    --fs-md: 0.9375rem; /* 15 */
+    --fs-lg: 1.0625rem; /* 17 */
+    --fs-xl: 1.375rem;  /* 22 */
+    --fs-2xl: 2rem;     /* 32 */
+    --fs-3xl: clamp(2.25rem, 1.4rem + 3.2vw, 3.5rem);
+
+    /* Espacements */
+    --s1: 4px;
+    --s2: 8px;
+    --s3: 12px;
+    --s4: 16px;
+    --s5: 24px;
+    --s6: 32px;
+    --s7: 48px;
+    --s8: 64px;
+
+    /* Rayons : petits pour les couvertures (objets imprimés), plus doux pour les contrôles */
+    --r-cover: 3px;
+    --r-ctrl: 7px;
+    --r-panel: 12px;
+    --r-pill: 999px;
+
+    --page-max: 1320px;
+    --gutter: clamp(16px, 4vw, 40px);
+    --topbar-h: 60px;
+
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+    color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+    --bg: #f3f4f6;
+    --bg-raised: #ffffff;
+    --bg-sunken: #e9ebef;
+    --bg-hover: #e8eaee;
+    --line: #dcdfe5;
+    --line-strong: #c3c8d1;
+    --text: #17191e;
+    --text-muted: #5a5f69;
+    --text-faint: #8a8f99;
+    --accent: #8f6400;
+    --accent-hover: #7a5500;
+    --accent-text: #ffffff;
+    --accent-soft: rgb(143 100 0 / 0.1);
+    --danger: #c0392b;
+    --danger-soft: rgb(192 57 43 / 0.08);
+    --ongoing: #2f6fb3;
+    --completed: #1f8a4c;
+    --cover-bg: #e1e4e9;
+    --backdrop: rgb(20 23 30 / 0.4);
+    --shadow-pop: 0 18px 48px rgb(20 24 32 / 0.16), 0 0 0 1px var(--line);
+    --focus: #8f6400;
+    --toast-danger: #f2786d;
+    --toast-success: #7fd3a1;
+    color-scheme: light;
+}

@@ -1,63 +1,49 @@
-export default async function handler(req, res) {
-    // Activer CORS
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+// GET  /api/profiles        → liste publique des profils (jamais de code PIN)
+// POST /api/profiles        → crée un profil { name, pin } et renvoie une session
+import crypto from 'node:crypto';
+import { getKV } from './_lib/kv.js';
+import { route, send, body, cleanString, HttpError } from './_lib/http.js';
+import { keys, listProfiles, publicProfile, emptyLibrary, ensureMigrated } from './_lib/store.js';
+import { hashPin, isValidNewPin, createSession } from './_lib/auth.js';
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
+export default route({
+    async GET(req, res) {
+        const kv = getKV();
+        await ensureMigrated(kv, hashPin);
+        const profiles = await listProfiles(kv);
+        send(res, 200, { profiles: profiles.map(publicProfile) });
+    },
 
-    const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-    const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+    async POST(req, res) {
+        const kv = getKV();
+        await ensureMigrated(kv, hashPin);
+        const { name, pin } = body(req);
+        const cleanName = cleanString(name, 40);
+        if (!cleanName) throw new HttpError(400, 'Le nom du profil est obligatoire');
+        if (!isValidNewPin(pin)) throw new HttpError(400, 'Le code doit faire entre 4 et 6 chiffres');
 
-    if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-        return res.status(500).json({ error: 'Missing Upstash configuration' });
-    }
-
-    try {
-        if (req.method === 'GET') {
-            // Lire les profils depuis Upstash Redis
-            const response = await fetch(`${UPSTASH_URL}/get/anime-profiles`, {
-                headers: {
-                    Authorization: `Bearer ${UPSTASH_TOKEN}`
-                }
-            });
-            const result = await response.json();
-            
-            if (!result.result) {
-                return res.status(200).json({ profiles: {} });
-            }
-
-            // Upstash retourne les données en string JSON
-            const data = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
-            return res.status(200).json(data);
+        const existing = await listProfiles(kv);
+        if (existing.some((p) => p.name.toLowerCase() === cleanName.toLowerCase())) {
+            throw new HttpError(409, 'Un profil porte déjà ce nom');
         }
+        if (existing.length >= 50) throw new HttpError(400, 'Nombre maximum de profils atteint');
 
-        if (req.method === 'POST' || req.method === 'PUT') {
-            // Sauvegarder les profils dans Upstash Redis
-            const bodyData = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-            
-            const response = await fetch(`${UPSTASH_URL}/set/anime-profiles/${encodeURIComponent(bodyData)}`, {
-                method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${UPSTASH_TOKEN}`
-                }
-            });
-            const result = await response.json();
-
-            return res.status(200).json({ 
-                success: true, 
-                message: 'Profils sauvegardés avec succès',
-                result 
-            });
-        }
-
-        return res.status(405).json({ error: 'Method not allowed' });
-    } catch (error) {
-        console.error('Redis error:', error);
-        return res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-}
+        const id = `profile_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+        const profile = {
+            id,
+            name: cleanName,
+            // Le tout premier profil d'une installation vide devient administrateur.
+            isAdmin: existing.length === 0,
+            pinHash: hashPin(pin),
+            pinVersion: 1,
+            itemCount: 0,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+        await kv.set(keys.profile(id), profile);
+        await kv.set(keys.library(id), emptyLibrary());
+        await kv.sadd(keys.profileIds, id);
+        const token = await createSession(kv, profile);
+        send(res, 201, { profile: publicProfile(profile), token });
+    },
+});

@@ -1,132 +1,78 @@
-# Liste Manga/Anime
+# Liste — mangas et animes
 
-Une application web pour tracker votre progression dans les mangas et animes avec persistance des données via une API serverless.
+Site de suivi de mangas et d'animes entre potes : chaque profil a sa liste, protégée par un code.
+Les infos (couvertures, nombre de chapitres/épisodes, saisons, sorties) viennent de MyAnimeList via l'API Jikan.
 
 ## Fonctionnalités
 
-- ✨ Tracker votre progression pour les mangas et animes
-- 🎯 Ajouter des favoris
-- 📊 Afficher la progression globale
-- 🔄 Récupération automatique des informations depuis MyAnimeList
-- 💾 Sauvegarde persistante des données dans un fichier JSON
-- 🎨 Interface moderne et responsive
+- Profils protégés par un code de 4 à 6 chiffres, mode lecture seule pour consulter la liste d'un autre
+- Mangas, animes (avec détection des saisons), watchlist, recommandations entre profils, liens vers les sites
+- Progression rapide depuis la grille ou depuis la page de chaque titre, note perso, lien officiel de lecture
+- « Nouveautés » : nouveaux chapitres/épisodes et prochaines sorties estimées
+- « Tout mettre à jour », export/import de sa liste en JSON (compatible avec les exports de l'ancienne version)
+- Thème sombre ou clair, version mobile
 
 ## Structure
 
 ```
-siteanime/
-├── index.html          # Structure HTML
-├── styles.css          # Styles CSS
-├── script.js           # Logique JavaScript
-├── data.json           # Fichier de données (créé automatiquement)
-├── api/
-│   └── data.js         # API serverless pour Vercel
-├── vercel.json         # Configuration Vercel
-├── package.json        # Configuration Node.js
-└── README.md           # Ce fichier
+index.html            Point d'entrée Vite
+src/
+  App.jsx             Routes (/mangas, /animes, /watchlist, /recommandations, /sites, /oeuvre/:id)
+  state/              État global (profils, session, enregistrement automatique), toasts et thème
+  pages/              Écrans
+  components/         Barre du haut, cartes, dialogues…
+  lib/                API du site, Jikan, calculs de progression, export/import
+  styles/             Design tokens et styles
+api/                  Fonctions serverless Vercel
+  profiles.js         Liste et création des profils
+  profile.js          Renommer, changer le code, supprimer
+  session.js          Connexion / déconnexion
+  library.js          Lecture et enregistrement d'une liste
+  admin.js            Réimport des données de l'ancienne version (admin)
+  _lib/               Stockage, sécurité, modèle de données (non exposé)
+scripts/dev-seed.mjs  Fausses données pour tester en local
 ```
 
-## Déploiement sur Vercel
+## Données et sécurité
 
-### Préalables
-- Compte GitHub
-- Compte Vercel (gratuit sur https://vercel.com)
-- Compte Upstash (gratuit sur https://upstash.com)
+Les données sont dans Upstash Redis :
 
-### Étapes de déploiement
+- `v2:profile:<id>` : nom, rôle, code **haché** (scrypt). Le code n'est jamais renvoyé par l'API.
+- `v2:library:<id>` : la liste du profil, avec un numéro de version pour éviter qu'un appareil écrase les changements d'un autre.
+- `v2:session:<jeton>` : sessions (60 jours). Changer son code déconnecte les autres appareils.
+- Après 8 codes faux, le profil est bloqué 15 minutes.
+- `anime-profiles` : les données de l'ancienne version. Elles ne sont **jamais modifiées** et servent de sauvegarde.
 
-1. **Initialiser un dépôt Git**
-   ```bash
-   cd siteanime
-   git init
-   git add .
-   git commit -m "Initial commit"
-   ```
+Au premier chargement, la nouvelle version importe automatiquement les profils et listes de l'ancienne version.
+Chacun garde son code.
 
-2. **Pousser sur GitHub**
-   - Créez un dépôt sur GitHub
-   - Poussez votre code :
-   ```bash
-   git remote add origin https://github.com/votre-username/siteanime.git
-   git branch -M main
-   git push -u origin main
-   ```
+## Variables d'environnement (Vercel)
 
-3. **Créer une base de données Upstash Redis - IMPORTANT**
-   
-   a. Allez sur https://console.upstash.com/redis
-   
-   b. Cliquez sur **"Create Database"**
-   
-   c. Nommez-la : `anime-manga-db`
-   
-   d. Sélectionnez la région : `eu-west-1` (Europe)
-   
-   e. Cliquez **"Create"**
-   
-   f. Copiez l'URL et le token (vous en aurez besoin)
+| Variable | Rôle |
+| --- | --- |
+| `UPSTASH_REDIS_REST_URL` | URL REST de la base Upstash |
+| `UPSTASH_REDIS_REST_TOKEN` | Jeton de la base Upstash |
 
-4. **Déployer sur Vercel**
-   - Allez sur https://vercel.com/import
-   - Sélectionnez votre dépôt GitHub
-   - Cliquez sur **"Deploy"**
-   - Une fois le déploiement terminé, allez dans **"Settings" > "Environment Variables"**
-   - Ajoutez deux variables :
-     - `UPSTASH_REDIS_REST_URL` = votre URL Upstash
-     - `UPSTASH_REDIS_REST_TOKEN` = votre token Upstash
-   - Cliquez sur **"Redeploy"**
+Elles doivent être actives pour **Production** et **Preview** (Settings → Environment Variables).
 
-5. **C'est prêt !** 🎉
-   - Vos données seront maintenant sauvegardées en ligne
-   - Accessibles depuis n'importe quel appareil ou navigateur
-   - Plan gratuit Upstash : 10 000 commandes/jour
+## Mise en ligne de la refonte
+
+1. Tester l'URL de preview de la branche `refonte`.
+2. Fusionner la branche dans `main` : Vercel déploie la nouvelle version.
+3. Se connecter avec le profil administrateur, puis menu du profil → **Réimporter l'ancienne version**,
+   pour récupérer les changements faits sur l'ancien site pendant les tests.
+4. Changer le code administrateur : l'ancien était écrit dans le code public du site.
 
 ## Développement local
 
-### Avec Python
 ```bash
-python -m http.server 8000
-# Ouvrez http://localhost:8000
+npm install
+npm run seed:dev   # fausses données (codes : Admin 1111, Sam 2222)
+npm run dev        # http://localhost:5173
 ```
 
-### Avec Node.js (via http-server)
-```bash
-npx http-server
-# Ouvrez http://localhost:8080
-```
+Sans variables Upstash, les fonctions `/api` utilisent un faux stockage dans `.dev-kv.json`.
 
-## Notes
-
-- Les données sont sauvegardées automatiquement chaque fois que vous modifiez votre liste
-- En cas d'erreur réseau, l'application bascule vers le localStorage local
-- L'API MyAnimeList (Jikan) est utilisée pour récupérer les informations des animes/mangas
-
-## Utilisation
-
-1. Entrez le titre d'un anime ou manga
-2. Sélectionnez le type (Anime ou Manga)
-3. Cliquez sur "Ajouter"
-4. Utilisez les boutons + et - pour tracker votre progression
-5. Cliquez sur l'étoile pour ajouter aux favoris
-6. Les changements sont sauvegardés automatiquement
-
-## API
-
-L'API serverless expose un endpoint :
-
-**GET /api/data** - Récupère les données actuelles
-**POST /api/data** - Sauvegarde les données
-
-Format des données :
-```json
-{
-  "library": [],
-  "imageCache": {},
-  "malInfoCache": {},
-  "lastUpdateCheck": 0
-}
-```
-
-## License
+## Licence
 
 MIT
