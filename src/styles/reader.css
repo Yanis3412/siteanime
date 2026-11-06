@@ -133,6 +133,11 @@
     font-weight: 600;
     color: var(--r-muted);
 }
+.reader__setting-hint {
+    margin-top: -4px;
+    font-size: var(--fs-xs);
+    color: var(--r-muted);
+}
 .reader__settings .segmented {
     background: #101216;
     border-color: var(--r-line);
@@ -215,6 +220,26 @@
     width: min(100%, 1100px);
     height: auto;
     margin: 0 auto;
+}
+
+/* Deux pages côte à côte, comme un livre ouvert : dans le sens japonais, la première page est à droite. */
+.paged__spread {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    margin: auto;
+}
+.paged--rtl .paged__spread {
+    flex-direction: row-reverse;
+}
+.paged--double .paged__img {
+    margin: 0;
+    max-width: calc(50vw - (var(--safe-left) + var(--safe-right)) / 2);
+}
+.paged--double.paged--width .paged__img {
+    width: min(calc(50vw - (var(--safe-left) + var(--safe-right)) / 2), 820px);
+    max-height: none;
 }
 
 /* Mode défilement */
