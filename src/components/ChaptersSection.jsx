@@ -7,7 +7,7 @@ import { useUi } from '../state/ui.jsx';
 import { api } from '../lib/api.js';
 import { Menu } from './ui/Menu.jsx';
 import { ImportDialog } from './ImportDialog.jsx';
-import { formatBytes, formatNum } from '../lib/importer.js';
+import { filesFromDrop, formatBytes, formatNum } from '../lib/importer.js';
 import { isChapterRead, missingRanges } from '../lib/items.js';
 
 const PAGE = 40;
@@ -27,10 +27,54 @@ export function ChaptersSection({ item }) {
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
     const [importOpen, setImportOpen] = useState(false);
+    const [dropped, setDropped] = useState(null); // fichiers déposés sur la page
+    const [pageDrag, setPageDrag] = useState(false);
     const [shown, setShown] = useState(PAGE);
     const [desc, setDesc] = useState(true);
     const profileId = session.profileId;
     const token = writeTokenFor(profileId);
+
+    // Import rapide : déposer une capture ou un chapitre n'importe où sur la page du manga.
+    useEffect(() => {
+        let depth = 0;
+        const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+        const busy = () => !!document.querySelector('dialog[open]');
+        const onEnter = (e) => {
+            if (!hasFiles(e) || busy()) return;
+            depth++;
+            setPageDrag(true);
+        };
+        const onOver = (e) => {
+            if (!hasFiles(e) || busy()) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        };
+        const onLeave = (e) => {
+            if (!hasFiles(e) || busy()) return;
+            depth = Math.max(0, depth - 1);
+            if (!depth) setPageDrag(false);
+        };
+        const onDrop = async (e) => {
+            if (!hasFiles(e) || busy()) return;
+            e.preventDefault();
+            depth = 0;
+            setPageDrag(false);
+            const entries = await filesFromDrop(e.dataTransfer);
+            if (!entries.length) return;
+            setDropped(entries);
+            setImportOpen(true);
+        };
+        window.addEventListener('dragenter', onEnter);
+        window.addEventListener('dragover', onOver);
+        window.addEventListener('dragleave', onLeave);
+        window.addEventListener('drop', onDrop);
+        return () => {
+            window.removeEventListener('dragenter', onEnter);
+            window.removeEventListener('dragover', onOver);
+            window.removeEventListener('dragleave', onLeave);
+            window.removeEventListener('drop', onDrop);
+        };
+    }, []);
 
     const [jobs, setJobs] = useState([]);
     const [worker, setWorker] = useState(null);
@@ -327,13 +371,27 @@ export function ChaptersSection({ item }) {
 
             <ImportDialog
                 open={importOpen}
-                onClose={() => setImportOpen(false)}
+                onClose={() => {
+                    setImportOpen(false);
+                    setDropped(null);
+                }}
                 item={item}
                 profileId={profileId}
                 token={token}
                 existing={existing}
                 onImported={onImported}
+                initialEntries={dropped}
             />
+
+            {pageDrag && (
+                <div className="page-drop" aria-hidden="true">
+                    <div className="page-drop__box">
+                        <Upload size={28} />
+                        <p className="page-drop__title">Dépose pour importer dans {item.title}</p>
+                        <p className="page-drop__text">Capture GoFullPage, PDF, CBZ, ZIP ou images. Le numéro est lu dans le nom du fichier.</p>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }
