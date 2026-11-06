@@ -18,15 +18,3 @@ export function save(key, value) {
         /* stockage indisponible : on ignore */
     }
 }
-
-// Jetons de session, un par profil déverrouillé sur cet appareil.
-export const tokens = {
-    all: () => load('tokens', {}),
-    get: (profileId) => load('tokens', {})[profileId] || null,
-    set(profileId, token) {
-        const all = load('tokens', {});
-        if (token) all[profileId] = token;
-        else delete all[profileId];
-        save('tokens', all);
-    },
-};

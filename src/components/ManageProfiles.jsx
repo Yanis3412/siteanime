@@ -1,5 +1,5 @@
 // « Gérer les profils » : réservé à l'administrateur. Pour chaque profil : photo, nom, nouveau code, suppression.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
@@ -7,8 +7,7 @@ import { Dialog } from './ui/Dialog.jsx';
 import { Avatar } from './ui/Avatar.jsx';
 import { PinField } from './PinField.jsx';
 import { PhotoField } from './PhotoField.jsx';
-import { api, avatarUrl } from '../lib/api.js';
-import { load, save } from '../lib/storage.js';
+import { avatarUrl } from '../lib/api.js';
 
 export function ManageProfilesDialog({ open, onClose }) {
     const { profiles } = useApp();
@@ -40,37 +39,10 @@ export function ManageProfilesDialog({ open, onClose }) {
     );
 }
 
-// Vérifie que la session administrateur de cet appareil est toujours valable.
+// Réservé au profil administrateur ouvert avec son code.
 function AdminGate({ children }) {
-    const [state, setState] = useState('checking');
-
-    useEffect(() => {
-        const token = load('adminToken');
-        if (!token) return setState('denied');
-        let alive = true;
-        api.checkSession(token)
-            .then((s) => {
-                if (!alive) return;
-                if (s.valid && s.isAdmin) setState('ok');
-                else {
-                    save('adminToken', null);
-                    setState('denied');
-                }
-            })
-            .catch(() => alive && setState('ok')); // hors ligne : les actions afficheront l'erreur
-        return () => {
-            alive = false;
-        };
-    }, []);
-
-    if (state === 'checking') return <p className="muted">Vérification…</p>;
-    if (state === 'denied') {
-        return (
-            <p className="dialog__text">
-                Ouvre d’abord le profil administrateur avec son code sur cet appareil, puis reviens ici.
-            </p>
-        );
-    }
+    const { hasAdminAccess } = useApp();
+    if (!hasAdminAccess) return <p className="dialog__text">Ouvre le profil administrateur avec son code pour gérer les profils.</p>;
     return children;
 }
 

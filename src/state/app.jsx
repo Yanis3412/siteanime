@@ -1,7 +1,7 @@
 // État global : profils, session en cours, bibliothèque et enregistrement automatique.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError } from '../lib/api.js';
-import { load, save, tokens } from '../lib/storage.js';
+import { load, save } from '../lib/storage.js';
 import { useUi } from './ui.jsx';
 import { findEntries, summarize } from '../lib/meta.js';
 
@@ -47,10 +47,11 @@ export function AppProvider({ children }) {
         }
     }, []);
 
-    // Jeton utilisable pour écrire dans un profil : le sien, ou celui de l'admin connecté sur cet appareil.
-    const writeTokenFor = useCallback((profileId) => tokens.get(profileId) || load('adminToken'), []);
-    // asAdmin : action faite depuis « Gérer les profils », toujours avec la session administrateur.
-    const tokenFor = useCallback((profileId, asAdmin) => (asAdmin ? load('adminToken') : writeTokenFor(profileId)), [writeTokenFor]);
+    // Une seule session à la fois : celle du profil ouvert. Changer de profil la ferme,
+    // et le code est redemandé. L'administrateur agit sur les autres profils avec sa propre session.
+    const writeTokenFor = useCallback(() => (sessionRef.current?.mode === 'owner' ? sessionRef.current.token : null), []);
+    const tokenFor = writeTokenFor;
+    const remember = (profileId, token) => save('session', token ? { profileId, token } : null);
 
     const loadLibrary = useCallback(async (profileId) => {
         const cached = load(`library.${profileId}`);
@@ -77,22 +78,20 @@ export function AppProvider({ children }) {
         [loadLibrary],
     );
 
-    // Essaie d'ouvrir un profil sans code grâce à une session déjà ouverte sur cet appareil.
+    // Au rechargement de la page, rouvre le profil qui était ouvert (sa session est toujours valable).
     const resume = useCallback(
         async (profileId) => {
-            const candidates = [tokens.get(profileId), load('adminToken')].filter(Boolean);
-            for (const token of candidates) {
-                try {
-                    const s = await api.checkSession(token);
-                    if (s.valid && (s.profileId === profileId || s.isAdmin)) {
-                        await enter(profileId, 'owner', token, s.isAdmin && s.profileId === profileId);
-                        return true;
-                    }
-                } catch {
-                    /* hors ligne : on demandera le code */
+            const stored = load('session');
+            if (!stored?.token || stored.profileId !== profileId) return false;
+            try {
+                const s = await api.checkSession(stored.token);
+                if (s.valid && s.profileId === profileId) {
+                    await enter(profileId, 'owner', stored.token, s.isAdmin);
+                    return true;
                 }
-                if (token === tokens.get(profileId)) tokens.set(profileId, null);
-                else save('adminToken', null);
+                remember(null);
+            } catch {
+                /* hors ligne : on demandera le code */
             }
             return false;
         },
@@ -102,8 +101,7 @@ export function AppProvider({ children }) {
     const unlock = useCallback(
         async (profileId, pin) => {
             const data = await api.login(profileId, pin);
-            tokens.set(profileId, data.token);
-            if (data.profile.isAdmin) save('adminToken', data.token);
+            remember(profileId, data.token);
             await enter(profileId, 'owner', data.token, data.profile.isAdmin);
         },
         [enter],
@@ -114,8 +112,7 @@ export function AppProvider({ children }) {
     const createProfile = useCallback(
         async (name, pin) => {
             const data = await api.createProfile(name, pin);
-            tokens.set(data.profile.id, data.token);
-            if (data.profile.isAdmin) save('adminToken', data.token);
+            remember(data.profile.id, data.token);
             await refreshProfiles();
             await enter(data.profile.id, 'owner', data.token, data.profile.isAdmin);
             return data.profile;
@@ -125,33 +122,23 @@ export function AppProvider({ children }) {
 
     const flushRef = useRef(async () => {});
 
+    // Changer de profil = fermer la session : il faudra retaper le code pour revenir.
     const leave = useCallback(async () => {
-        await flushRef.current();
-        setSession(null);
-        setLibrary(null);
-        save('lastProfile', null);
-        refreshProfiles();
-    }, [refreshProfiles]);
-
-    const logout = useCallback(async () => {
         const s = sessionRef.current;
         await flushRef.current();
-        if (s?.token) {
-            api.logout(s.token).catch(() => {});
-            tokens.set(s.profileId, null);
-            if (load('adminToken') === s.token) save('adminToken', null);
-        }
+        if (s?.token) api.logout(s.token).catch(() => {});
+        remember(null);
         setSession(null);
         setLibrary(null);
         save('lastProfile', null);
         refreshProfiles();
     }, [refreshProfiles]);
+    const logout = leave;
 
     const handleAuthError = useCallback(
         (err) => {
             if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-                const s = sessionRef.current;
-                if (s) tokens.set(s.profileId, null);
+                remember(null);
                 toast('Ta session a expiré. Entre à nouveau ton code.', { tone: 'error' });
                 setSession(null);
                 setLibrary(null);
@@ -173,14 +160,10 @@ export function AppProvider({ children }) {
     const changePin = useCallback(
         async (profileId, pin, { asAdmin = false } = {}) => {
             const data = await api.updateProfile(profileId, { pin }, tokenFor(profileId, asAdmin));
+            // Son propre code : le serveur renvoie une nouvelle session (les autres appareils sont déconnectés).
             if (data.token) {
-                tokens.set(profileId, data.token);
-                if (data.profile.isAdmin) save('adminToken', data.token);
+                remember(profileId, data.token);
                 setSession((s) => (s?.profileId === profileId ? { ...s, token: data.token } : s));
-            } else {
-                // Code changé par l'admin : l'ancienne session de ce profil sur cet appareil ne vaut plus rien.
-                tokens.set(profileId, null);
-                setSession((s) => (s?.profileId === profileId && s.mode === 'owner' ? { ...s, token: load('adminToken') } : s));
             }
         },
         [tokenFor],
@@ -199,9 +182,9 @@ export function AppProvider({ children }) {
     const deleteProfile = useCallback(
         async (profileId, { asAdmin = false } = {}) => {
             await api.deleteProfile(profileId, tokenFor(profileId, asAdmin));
-            tokens.set(profileId, null);
             save(`library.${profileId}`, null);
             if (sessionRef.current?.profileId === profileId) {
+                remember(null);
                 setSession(null);
                 setLibrary(null);
                 save('lastProfile', null);
@@ -342,6 +325,9 @@ export function AppProvider({ children }) {
 
     useEffect(() => {
         (async () => {
+            // Anciennes versions : plusieurs sessions gardées sur l'appareil (dont celle de l'admin). On les oublie.
+            save('tokens', null);
+            save('adminToken', null);
             const list = await refreshProfiles();
             const last = load('lastProfile');
             if (list && last && list.some((p) => p.id === last)) await resume(last);
@@ -399,7 +385,8 @@ export function AppProvider({ children }) {
         profile,
         readOnly,
         // L'administrateur est connecté sur cet appareil : il peut gérer tous les profils.
-        hasAdminAccess: session?.mode === 'owner' && !!load('adminToken'),
+        // Seulement quand le profil administrateur lui-même est ouvert.
+        hasAdminAccess: session?.mode === 'owner' && !!session.isAdmin,
         library,
         saveState,
         task,
