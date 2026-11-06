@@ -57,7 +57,7 @@ export function ProfileMenu() {
             const status = await api.adminStatus(token);
             const ok = await confirm({
                 title: 'Réimporter l’ancienne version ?',
-                message: `Les données de tous les profils seront remplacées par celles de l’ancien site (${status.legacyProfiles} profils, ${status.legacyItems} titres). À faire une seule fois, au moment de la mise en ligne.`,
+                message: `La progression de l’ancien site (${status.legacyProfiles} profils, ${status.legacyItems} titres) remplacera celle de la nouvelle version. Les chapitres importés et les titres ajoutés depuis sont conservés. À faire une seule fois, juste après la mise en ligne.`,
                 confirmLabel: 'Réimporter',
                 danger: true,
             });

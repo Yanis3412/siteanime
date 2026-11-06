@@ -122,40 +122,94 @@ export async function readLegacyProfiles(kv) {
     return Object.values(profiles).filter((p) => p && p.id && p.name && p.name !== 'undefined' && p.name.trim());
 }
 
-// Importe les profils v1. Avec force=true, remplace les données v2 existantes.
-export async function migrateFromLegacy(kv, { force = false, hashPin } = {}) {
-    if (force) {
-        const ids = await kv.smembers(keys.profileIds);
-        if (ids.length) {
-            await kv.del(...ids.map(keys.profile), ...ids.map(keys.library), keys.profileIds);
-        }
-    }
+const sameTitle = (a, b) =>
+    a.type === b.type && ((a.malId && b.malId && Number(a.malId) === Number(b.malId)) || a.title.trim().toLowerCase() === b.title.trim().toLowerCase());
 
+// Fusionne une liste de l'ancien site dans une liste v2 existante.
+// La progression de l'ancien site fait foi ; les identifiants v2 sont conservés
+// (les chapitres importés restent rattachés à leur titre).
+function mergeItems(legacyItems, imageCache, currentItems, { keepIds, migratedAt }) {
+    const used = new Set();
+    const merged = [];
+    for (const raw of legacyItems) {
+        if (!raw?.title) continue;
+        const match = currentItems.find((it) => !used.has(it.id) && sameTitle(it, { ...raw, type: raw.type === 'Anime' ? 'Anime' : 'Manga' }));
+        if (!match) {
+            const created = convertLegacyItem(raw, imageCache);
+            if (created) merged.push(created);
+            continue;
+        }
+        used.add(match.id);
+        const hasSeasons = Array.isArray(raw.seasons) && raw.seasons.length > 0;
+        const item = sanitizeItem({
+            ...match,
+            title: raw.title,
+            current: raw.current,
+            total: raw.total,
+            malId: raw.malId || match.malId,
+            status: raw.status || match.status,
+            fav: raw.fav,
+            recommended: raw.recommended,
+            note: raw.note ?? match.note,
+            seasons: hasSeasons ? raw.seasons : match.seasons,
+            seasonProgress: hasSeasons ? raw.seasonProgress : match.seasonProgress,
+            imageUrl: match.imageUrl || imageCache?.[`${raw.title}-${raw.type}`] || null,
+            updatedAt: Date.now(),
+        });
+        if (item) merged.push(item);
+    }
+    // Titres présents seulement dans la nouvelle version : gardés s'ils y ont été ajoutés
+    // après la première migration ou s'ils ont des chapitres importés.
+    for (const it of currentItems) {
+        if (!used.has(it.id) && (keepIds.has(it.id) || (it.addedAt || 0) > migratedAt)) merged.push(it);
+    }
+    return merged.slice(0, MAX_ITEMS);
+}
+
+// Importe les profils de l'ancien site. Sans données v2, c'est une simple copie ;
+// sinon (réimport), les listes sont fusionnées sans perdre les chapitres ni les ajouts récents.
+export async function migrateFromLegacy(kv, { hashPin, verifyPin } = {}) {
+    const previous = await kv.get(keys.migrated);
+    const migratedAt = previous?.at || 0;
     const legacy = await readLegacyProfiles(kv);
     let itemCount = 0;
+
     for (const old of legacy) {
         const id = cleanString(old.id, 64) || `profile_${Date.now()}`;
-        const items = (Array.isArray(old.library) ? old.library : [])
-            .map((it) => convertLegacyItem(it, old.imageCache))
-            .filter(Boolean)
-            .slice(0, MAX_ITEMS);
+        const legacyItems = Array.isArray(old.library) ? old.library : [];
+        const existing = await kv.get(keys.profile(id));
+        const currentLib = existing ? (await kv.get(keys.library(id))) || emptyLibrary() : null;
+        const keepIds = new Set(existing ? await kv.smembers(`v2:chapter-items:${id}`) : []);
+
+        const items = currentLib
+            ? mergeItems(legacyItems, old.imageCache, currentLib.items || [], { keepIds, migratedAt })
+            : legacyItems.map((it) => convertLegacyItem(it, old.imageCache)).filter(Boolean).slice(0, MAX_ITEMS);
         itemCount += items.length;
+
+        // Code : celui de l'ancien site fait foi. S'il n'a pas changé, les sessions restent valides.
+        let pinHash = old.password ? hashPin(String(old.password)) : null;
+        let pinVersion = existing?.pinVersion || 1;
+        if (existing) {
+            const unchanged = old.password ? existing.pinHash && verifyPin(String(old.password), existing.pinHash) : !existing.pinHash;
+            if (unchanged) pinHash = existing.pinHash;
+            else pinVersion += 1;
+        }
 
         const profile = {
             id,
             name: cleanString(old.name, 40),
-            isAdmin: !!old.isAdmin,
-            pinHash: old.password ? hashPin(String(old.password)) : null,
-            pinVersion: 1,
+            isAdmin: !!old.isAdmin || !!existing?.isAdmin,
+            pinHash,
+            pinVersion,
             itemCount: items.length,
-            createdAt: id === 'default' ? 0 : Number(String(id).replace(/\D/g, '')) || Date.now(),
+            createdAt: existing?.createdAt ?? (id === 'default' ? 0 : Number(String(id).replace(/\D/g, '')) || Date.now()),
             updatedAt: Date.now(),
         };
         const library = {
-            version: 1,
+            version: (currentLib?.version || 0) + 1,
             updatedAt: Date.now(),
             items,
-            lastKnownTotals: sanitizeTotals(old.lastKnownTotals),
+            lastKnownTotals: { ...(currentLib?.lastKnownTotals || {}), ...sanitizeTotals(old.lastKnownTotals) },
         };
         await kv.set(keys.profile(id), profile);
         await kv.set(keys.library(id), library);
@@ -168,7 +222,7 @@ export async function migrateFromLegacy(kv, { force = false, hashPin } = {}) {
 }
 
 // Lance la migration une seule fois, au premier appel.
-export async function ensureMigrated(kv, hashPin) {
+export async function ensureMigrated(kv, hashPin, verifyPin) {
     if (await kv.get(keys.migrated)) return;
     const gotLock = await kv.set(keys.migrationLock, Date.now(), { nx: true, ex: 60 });
     if (!gotLock) {
@@ -180,7 +234,7 @@ export async function ensureMigrated(kv, hashPin) {
         return;
     }
     try {
-        await migrateFromLegacy(kv, { hashPin });
+        await migrateFromLegacy(kv, { hashPin, verifyPin });
     } finally {
         await kv.del(keys.migrationLock);
     }

@@ -1,10 +1,10 @@
 // POST /api/admin { action: 'reimport' } → réimporte les données de l'ancienne version
-// (clé "anime-profiles") en remplaçant les données actuelles. Réservé à l'administrateur.
+// (clé "anime-profiles") en les fusionnant avec les données actuelles. Réservé à l'administrateur.
 // Utile une seule fois, au moment de la mise en ligne, pour récupérer les derniers changements.
 import { getKV } from './_lib/kv.js';
 import { route, send, body, HttpError } from './_lib/http.js';
 import { migrateFromLegacy, readLegacyProfiles } from './_lib/store.js';
-import { hashPin, requireAdmin } from './_lib/auth.js';
+import { hashPin, verifyPin, requireAdmin } from './_lib/auth.js';
 
 export default route({
     async GET(req, res) {
@@ -26,7 +26,7 @@ export default route({
         if (action !== 'reimport') throw new HttpError(400, 'Action inconnue');
         const legacy = await readLegacyProfiles(kv);
         if (!legacy.length) throw new HttpError(400, 'Aucune donnée de l’ancienne version à importer');
-        const summary = await migrateFromLegacy(kv, { force: true, hashPin });
+        const summary = await migrateFromLegacy(kv, { hashPin, verifyPin });
         send(res, 200, summary);
     },
 });
