@@ -9,7 +9,15 @@ import { load, save } from '../lib/storage.js';
 import { formatNum } from '../lib/importer.js';
 import { progressAfterReading } from '../lib/items.js';
 
-const DEFAULTS = { mode: 'paged', direction: 'rtl', fit: 'height', variant: 'fr' };
+// Version affichée par défaut : la couleur si elle existe (la traduction est désactivée pour l'instant).
+const DEFAULTS = { mode: 'paged', direction: 'rtl', fit: 'height', variant: 'color' };
+const OFFERED_VARIANTS = ['vo', 'color'];
+
+function initialSettings() {
+    const saved = { ...DEFAULTS, ...load('reader', {}) };
+    if (!OFFERED_VARIANTS.includes(saved.variant)) saved.variant = DEFAULTS.variant;
+    return saved;
+}
 const VARIANT_LABELS = { vo: 'VO', fr: 'VF', color: 'Couleur', 'fr-color': 'VF couleur' };
 
 export function ReaderPage() {
@@ -20,7 +28,7 @@ export function ReaderPage() {
     const profileId = session.profileId;
     const token = writeTokenFor(profileId);
 
-    const [settings, setSettings] = useState(() => ({ ...DEFAULTS, ...load('reader', {}) }));
+    const [settings, setSettings] = useState(initialSettings);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(0);
