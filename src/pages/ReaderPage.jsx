@@ -1,4 +1,5 @@
-// Liseuse : page par page ou en défilement vertical, sens de lecture japonais ou occidental.
+// Liseuse : page par page (une ou deux pages côte à côte) ou en défilement vertical,
+// sens de lecture japonais ou occidental.
 // La page atteinte est enregistrée, et finir un chapitre met à jour la progression du titre.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { formatNum } from '../lib/importer.js';
 import { progressAfterReading } from '../lib/items.js';
 
 // Version affichée par défaut : la couleur si elle existe (la traduction est désactivée pour l'instant).
-const DEFAULTS = { mode: 'paged', direction: 'rtl', fit: 'height', variant: 'color' };
+const DEFAULTS = { mode: 'paged', direction: 'rtl', fit: 'height', variant: 'color', spread: 'single', offset: true };
 const OFFERED_VARIANTS = ['vo', 'color'];
 
 function initialSettings() {
@@ -19,6 +20,41 @@ function initialSettings() {
     return saved;
 }
 const VARIANT_LABELS = { vo: 'VO', fr: 'VF', color: 'Couleur', 'fr-color': 'VF couleur' };
+
+// Écran assez large pour deux pages côte à côte (ordinateur, tablette à l'horizontale).
+const WIDE_QUERY = '(min-width: 900px) and (min-aspect-ratio: 1/1)';
+function useWideScreen() {
+    const [wide, setWide] = useState(() => window.matchMedia?.(WIDE_QUERY).matches ?? false);
+    useEffect(() => {
+        const mq = window.matchMedia?.(WIDE_QUERY);
+        if (!mq) return;
+        const onChange = () => setWide(mq.matches);
+        mq.addEventListener('change', onChange);
+        return () => mq.removeEventListener('change', onChange);
+    }, []);
+    return wide;
+}
+
+// Regroupe les pages par deux. Une page plus large que haute (double page dessinée) reste seule,
+// et la première page peut rester seule (page de titre) pour que les paires tombent juste.
+export function buildSpreads(count, isWide, offset) {
+    const spreads = [];
+    let i = 0;
+    if (offset && count > 0) {
+        spreads.push([0]);
+        i = 1;
+    }
+    while (i < count) {
+        if (isWide(i) || i + 1 >= count || isWide(i + 1)) {
+            spreads.push([i]);
+            i += 1;
+        } else {
+            spreads.push([i, i + 1]);
+            i += 2;
+        }
+    }
+    return spreads;
+}
 
 export function ReaderPage() {
     const { id, num } = useParams();
@@ -36,6 +72,8 @@ export function ReaderPage() {
     const [ui, setUi] = useState(true);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
+    const [ratios, setRatios] = useState({}); // largeur / hauteur de chaque page, par adresse
+    const wide = useWideScreen();
     const rootRef = useRef(null);
     const markedRef = useRef(false);
     const refetchedRef = useRef(false);
@@ -98,6 +136,30 @@ export function ReaderPage() {
 
     const total = data?.pages.length || 0;
 
+    // Deux pages côte à côte : seulement en mode page par page, sur un écran large.
+    const double = settings.mode === 'paged' && settings.spread === 'double' && wide;
+    useEffect(() => {
+        if (!double || !data) return;
+        let alive = true;
+        data.pages.forEach((src) => {
+            if (ratios[src]) return;
+            const img = new Image();
+            img.onload = () => alive && setRatios((r) => ({ ...r, [src]: img.naturalWidth / img.naturalHeight }));
+            img.src = src;
+        });
+        return () => {
+            alive = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [double, data]);
+    const spreads = useMemo(
+        () => (double && data ? buildSpreads(total, (i) => (ratios[data.pages[i]] || 0) > 1, settings.offset) : null),
+        [double, data, total, ratios, settings.offset],
+    );
+    const spreadIndex = spreads ? Math.max(0, spreads.findIndex((sp) => sp.includes(page))) : -1;
+    const visible = spreads ? spreads[spreadIndex] || [page] : [page];
+    const lastVisible = visible[visible.length - 1];
+
     // Enregistre la page atteinte et marque le chapitre comme lu à la dernière page.
     const itemRef = useRef(item);
     itemRef.current = item;
@@ -105,7 +167,7 @@ export function ReaderPage() {
         if (!data) return;
         clearTimeout(saveTimer.current);
         const current = data.chapter.num;
-        if (page >= total - 1 && !markedRef.current) {
+        if (lastVisible >= total - 1 && !markedRef.current) {
             markedRef.current = true;
             api.chapters.update({ profileId, itemId: id, num: current, read: true, lastPage: page }, token).catch(() => {});
             if (itemRef.current) updateItem(itemRef.current.id, (it) => progressAfterReading(it, current));
@@ -115,13 +177,25 @@ export function ReaderPage() {
             api.chapters.update({ profileId, itemId: id, num: current, lastPage: page }, token).catch(() => {});
         }, 1200);
         return () => clearTimeout(saveTimer.current);
-    }, [page, data, total, profileId, id, token, updateItem]);
+    }, [page, lastVisible, data, total, profileId, id, token, updateItem]);
 
     const pageRef = useRef(0);
     pageRef.current = page;
+    const spreadsRef = useRef(null);
+    spreadsRef.current = spreads;
     const go = useCallback(
         (delta) => {
             if (!total) return;
+            const sp = spreadsRef.current;
+            if (sp) {
+                // Deux pages : on avance d'une paire.
+                const at = Math.max(0, sp.findIndex((s) => s.includes(pageRef.current)));
+                const next = at + delta;
+                if (next >= sp.length) return setEnded(true);
+                setEnded(false);
+                setPage(sp[Math.max(0, next)][0]);
+                return;
+            }
             const next = pageRef.current + delta;
             if (next >= total) return setEnded(true);
             setEnded(false);
@@ -228,7 +302,7 @@ export function ReaderPage() {
                         {fullscreen ? <Minimize size={19} /> : <Maximize size={19} />}
                     </button>
                 </div>
-                {settingsOpen && <ReaderSettings settings={settings} onChange={changeSettings} onClose={() => setSettingsOpen(false)} />}
+                {settingsOpen && <ReaderSettings settings={settings} wide={wide} onChange={changeSettings} onClose={() => setSettingsOpen(false)} />}
             </header>
 
             {!data ? (
@@ -236,7 +310,7 @@ export function ReaderPage() {
             ) : settings.mode === 'paged' ? (
                 <PagedView
                     pages={data.pages}
-                    page={page}
+                    visible={visible}
                     settings={settings}
                     onPrev={() => go(-1)}
                     onNext={() => go(1)}
@@ -275,7 +349,7 @@ export function ReaderPage() {
                             aria-label="Aller à la page"
                         />
                         <span className="reader__count">
-                            {page + 1} / {total}
+                            {visible.length > 1 ? `${visible[0] + 1}-${visible[1] + 1}` : visible[0] + 1} / {total}
                         </span>
                     </div>
                     <button className="reader__chap" onClick={() => goChapter(settings.direction === 'rtl' && settings.mode === 'paged' ? data.prev : data.next)} disabled={(settings.direction === 'rtl' && settings.mode === 'paged' ? data.prev : data.next) === null}>
@@ -288,17 +362,19 @@ export function ReaderPage() {
     );
 }
 
-function PagedView({ pages, page, settings, onPrev, onNext, onToggleUi, onImageError }) {
+function PagedView({ pages, visible, settings, onPrev, onNext, onToggleUi, onImageError }) {
     const scrollRef = useRef(null);
+    const first = visible[0];
+    const last = visible[visible.length - 1];
 
     // Préchargement des pages suivantes.
     useEffect(() => {
-        for (let i = page + 1; i <= page + 3 && i < pages.length; i++) {
+        for (let i = last + 1; i <= last + 4 && i < pages.length; i++) {
             const img = new Image();
             img.src = pages[i];
         }
         scrollRef.current?.scrollTo({ top: 0 });
-    }, [page, pages]);
+    }, [first, last, pages]);
 
     // Zones de clic : bords pour tourner les pages (selon le sens), centre pour les barres.
     const onClick = (e) => {
@@ -311,8 +387,12 @@ function PagedView({ pages, page, settings, onPrev, onNext, onToggleUi, onImageE
     };
 
     return (
-        <div ref={scrollRef} className={`paged paged--${settings.fit}`} onClick={onClick}>
-            <img key={pages[page]} className="paged__img" src={pages[page]} alt={`Page ${page + 1}`} onError={onImageError} draggable="false" />
+        <div ref={scrollRef} className={`paged paged--${settings.fit} ${visible.length > 1 ? 'paged--double' : ''} ${settings.direction === 'rtl' ? 'paged--rtl' : ''}`} onClick={onClick}>
+            <div className="paged__spread">
+                {visible.map((i) => (
+                    <img key={pages[i]} className="paged__img" src={pages[i]} alt={`Page ${i + 1}`} onError={onImageError} draggable="false" />
+                ))}
+            </div>
         </div>
     );
 }
@@ -385,7 +465,7 @@ function EndOfChapter({ data, item, onNext, back, onStay }) {
     );
 }
 
-function ReaderSettings({ settings, onChange, onClose }) {
+function ReaderSettings({ settings, wide, onChange, onClose }) {
     const ref = useRef(null);
     useEffect(() => {
         const onDown = (e) => {
@@ -400,8 +480,16 @@ function ReaderSettings({ settings, onChange, onClose }) {
             { key: 'mode', label: 'Affichage', values: [['paged', 'Page par page'], ['scroll', 'Défilement']] },
             { key: 'direction', label: 'Sens de lecture', values: [['rtl', 'Japonais'], ['ltr', 'Occidental']], hidden: settings.mode !== 'paged' },
             { key: 'fit', label: 'Taille des pages', values: [['height', 'Hauteur de l’écran'], ['width', 'Largeur']], hidden: settings.mode !== 'paged' },
+            { key: 'spread', label: 'Pages affichées', values: [['single', 'Une page'], ['double', 'Deux pages']], hidden: settings.mode !== 'paged' || !wide },
+            {
+                key: 'offset',
+                label: 'Première page',
+                values: [[true, 'Seule'], [false, 'Avec la suivante']],
+                hidden: settings.mode !== 'paged' || !wide || settings.spread !== 'double',
+                hint: 'Change-la si les paires de pages ne vont pas ensemble.',
+            },
         ],
-        [settings.mode],
+        [settings.mode, settings.spread, wide],
     );
 
     return (
@@ -411,9 +499,10 @@ function ReaderSettings({ settings, onChange, onClose }) {
                 .map((o) => (
                     <div key={o.key} className="reader__setting">
                         <span className="reader__setting-label">{o.label}</span>
+                        {o.hint && <span className="reader__setting-hint">{o.hint}</span>}
                         <div className="segmented" role="radiogroup" aria-label={o.label}>
                             {o.values.map(([value, label]) => (
-                                <button key={value} role="radio" aria-checked={settings[o.key] === value} className={`segmented__opt ${settings[o.key] === value ? 'is-active' : ''}`} onClick={() => onChange({ [o.key]: value })}>
+                                <button key={String(value)} role="radio" aria-checked={settings[o.key] === value} className={`segmented__opt ${settings[o.key] === value ? 'is-active' : ''}`} onClick={() => onChange({ [o.key]: value })}>
                                     {label}
                                 </button>
                             ))}
