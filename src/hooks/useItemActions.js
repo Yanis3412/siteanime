@@ -2,7 +2,7 @@
 import { useCallback, useMemo } from 'react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
-import { fetchSeasons, findEntry, summarize } from '../lib/jikan.js';
+import { fetchSeasons, findEntry, summarize } from '../lib/meta.js';
 import { api } from '../lib/api.js';
 
 export function useItemActions() {
@@ -13,17 +13,23 @@ export function useItemActions() {
         async (item) => {
             toast(`Actualisation de ${item.title}…`, { duration: 2500 });
             try {
-                const info = summarize(await findEntry(item, { fresh: true }), item.type);
-                if (!info) return toast(`Aucune fiche MyAnimeList trouvée pour ${item.title}.`, { tone: 'error' });
+                const info = summarize(await findEntry(item, { fresh: true }));
+                if (!info) return toast(`Aucune fiche trouvée pour ${item.title}. Vérifie le titre avec « Modifier ».`, { tone: 'error' });
                 let seasons = null;
                 if (item.type === 'Anime') {
-                    const list = await fetchSeasons(info.malId);
+                    const list = await fetchSeasons(info);
                     if (list.length > 1) seasons = list;
                 }
                 updateItem(
                     item.id,
                     (it) => {
-                        const next = { ...it, malId: info.malId, status: info.status, imageUrl: info.imageUrl || it.imageUrl };
+                        const next = {
+                            ...it,
+                            malId: info.malId || it.malId,
+                            anilistId: info.anilistId || it.anilistId,
+                            status: info.status,
+                            imageUrl: info.imageUrl || it.imageUrl,
+                        };
                         if (seasons) {
                             // On garde la progression déjà saisie, saison par saison.
                             next.seasons = seasons;
@@ -36,8 +42,8 @@ export function useItemActions() {
                     { touch: false },
                 );
                 toast(seasons ? `${item.title} : ${seasons.length} saisons trouvées.` : `${item.title} est à jour.`, { tone: 'success' });
-            } catch {
-                toast('MyAnimeList ne répond pas. Réessaie dans un moment.', { tone: 'error' });
+            } catch (err) {
+                toast(err.message || 'Les fiches ne répondent pas. Réessaie dans un moment.', { tone: 'error' });
             }
         },
         [toast, updateItem],

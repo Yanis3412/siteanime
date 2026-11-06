@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api, ApiError } from '../lib/api.js';
 import { load, save, tokens } from '../lib/storage.js';
 import { useUi } from './ui.jsx';
-import { findEntry, summarize } from '../lib/jikan.js';
+import { findEntries, summarize } from '../lib/meta.js';
 
 const AppContext = createContext(null);
 const SAVE_DELAY = 700;
@@ -343,23 +343,31 @@ export function AppProvider({ children }) {
         save(key, Date.now());
         const profileId = session.profileId;
         (async () => {
-            for (const item of library.items) {
+            const items = library.items.filter((it) => !(it.status === 'completed' && (it.malId || it.anilistId) && it.imageUrl));
+            for (let start = 0; start < items.length; start += 50) {
                 if (sessionRef.current?.profileId !== profileId) return;
-                if (item.status === 'completed' && item.malId && item.imageUrl) continue;
+                const chunk = items.slice(start, start + 50);
+                let entries;
                 try {
-                    const info = summarize(await findEntry(item), item.type);
-                    if (!info) continue;
+                    entries = await findEntries(chunk);
+                } catch {
+                    return; /* sources indisponibles : on réessaiera plus tard */
+                }
+                const updates = new Map();
+                chunk.forEach((item, k) => {
+                    const info = summarize(entries[k]);
+                    if (!info) return;
                     const changes = {};
-                    if (!item.malId) changes.malId = info.malId;
+                    if (!item.malId && info.malId) changes.malId = info.malId;
+                    if (!item.anilistId && info.anilistId) changes.anilistId = info.anilistId;
                     if (info.status !== item.status) changes.status = info.status;
                     if (!item.seasons?.length && info.total && info.total !== item.total && info.total > (item.current || 0)) changes.total = info.total;
                     if (!item.imageUrl && info.imageUrl) changes.imageUrl = info.imageUrl;
-                    if (Object.keys(changes).length) {
-                        setLibrary((lib) => lib && { ...lib, items: lib.items.map((it) => (it.id === item.id ? { ...it, ...changes } : it)) });
-                        scheduleSave();
-                    }
-                } catch {
-                    /* Jikan indisponible : on réessaiera plus tard */
+                    if (Object.keys(changes).length) updates.set(item.id, changes);
+                });
+                if (updates.size && sessionRef.current?.profileId === profileId) {
+                    setLibrary((lib) => lib && { ...lib, items: lib.items.map((it) => (updates.has(it.id) ? { ...it, ...updates.get(it.id) } : it)) });
+                    scheduleSave();
                 }
             }
         })();

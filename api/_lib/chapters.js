@@ -43,16 +43,34 @@ export function compactExts(exts) {
     return exts.every((e) => e === exts[0]) ? exts[0] : exts;
 }
 
+// Versions produites par le traducteur : traduite, colorisée, ou les deux.
+export const VARIANTS = ['fr', 'color', 'fr-color'];
+
+export function variantPageKeys(chapter, variant) {
+    const v = chapter.variants?.[variant];
+    return v ? chapterPageKeys(v) : [];
+}
+
+// Toutes les pages stockées pour un chapitre (original + versions).
+export function allChapterKeys(chapter) {
+    return [...chapterPageKeys(chapter), ...Object.keys(chapter.variants || {}).flatMap((v) => variantPageKeys(chapter, v))];
+}
+
+export function chapterBytes(chapter) {
+    return (chapter.bytes || 0) + Object.values(chapter.variants || {}).reduce((n, v) => n + (v.bytes || 0), 0);
+}
+
 export function publicChapter(c) {
     return {
         num: c.num,
         title: c.title || '',
         pages: c.pages,
-        bytes: c.bytes,
+        bytes: chapterBytes(c),
         addedAt: c.addedAt,
         read: c.read ?? null,
         lastPage: c.lastPage || 0,
         readAt: c.readAt || null,
+        variants: Object.keys(c.variants || {}),
     };
 }
 
@@ -84,8 +102,8 @@ export async function removeAllForProfile(kv, blob, profileId) {
     let freed = 0;
     for (const itemId of itemIds) {
         const chapters = await loadChapters(kv, profileId, itemId);
-        if (blob.configured) await blob.removeMany(chapters.flatMap(chapterPageKeys));
-        freed += chapters.reduce((n, c) => n + (c.bytes || 0), 0);
+        if (blob.configured) await blob.removeMany(chapters.flatMap(allChapterKeys));
+        freed += chapters.reduce((n, c) => n + chapterBytes(c), 0);
         await kv.del(chapterKeys.list(profileId, itemId));
     }
     await kv.del(chapterKeys.items(profileId), chapterKeys.usage(profileId));

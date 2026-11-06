@@ -115,9 +115,12 @@ export function missingRanges(nums, limit = 6) {
 }
 
 export const sameWork = (a, b) =>
-    a.type === b.type && ((a.malId && b.malId && a.malId === b.malId) || a.title.toLowerCase() === b.title.toLowerCase());
+    a.type === b.type &&
+    ((a.anilistId && b.anilistId && a.anilistId === b.anilistId) ||
+        (a.malId && b.malId && a.malId === b.malId) ||
+        a.title.toLowerCase() === b.title.toLowerCase());
 
-export const totalsKey = (item) => String(item.malId || `${item.title}-${item.type}`);
+export const totalsKey = (item) => String(item.malId || (item.anilistId ? `al${item.anilistId}` : `${item.title}-${item.type}`));
 
 export function newItem(fields) {
     const now = Date.now();
@@ -128,6 +131,7 @@ export function newItem(fields) {
         current: 0,
         total: fields.total || null,
         malId: fields.malId || null,
+        anilistId: fields.anilistId || null,
         status: fields.status || 'unknown',
         fav: false,
         recommended: false,

@@ -7,7 +7,7 @@ import { useItemActions } from '../hooks/useItemActions.js';
 import { Cover } from '../components/ui/Cover.jsx';
 import { Dialog } from '../components/ui/Dialog.jsx';
 import { ChaptersSection } from '../components/ChaptersSection.jsx';
-import { getEntry } from '../lib/jikan.js';
+import { findEntry, externalLink } from '../lib/meta.js';
 import {
     percentOf,
     progressOf,
@@ -58,7 +58,7 @@ export function ItemPage() {
             <div className="item">
                 <div className="item__aside">
                     <Cover src={item.imageUrl} title={item.title} className="cover--lg" eager />
-                    {(item.officialUrl || item.malId) && (
+                    {(item.officialUrl || externalLink(item)) && (
                         <div className="item__links">
                             {item.officialUrl && (
                                 <a className="btn btn--secondary btn--block" href={item.officialUrl} target="_blank" rel="noopener noreferrer">
@@ -66,9 +66,9 @@ export function ItemPage() {
                                     <ExternalLink size={15} aria-hidden="true" />
                                 </a>
                             )}
-                            {item.malId && (
-                                <a className="btn btn--ghost btn--block" href={`https://myanimelist.net/${item.type === 'Anime' ? 'anime' : 'manga'}/${item.malId}`} target="_blank" rel="noopener noreferrer">
-                                    Fiche MyAnimeList
+                            {externalLink(item) && (
+                                <a className="btn btn--ghost btn--block" href={externalLink(item).url} target="_blank" rel="noopener noreferrer">
+                                    {externalLink(item).label}
                                     <ExternalLink size={15} aria-hidden="true" />
                                 </a>
                             )}
@@ -252,32 +252,32 @@ function NoteField({ item, readOnly }) {
     );
 }
 
-// Résumé et genres depuis MyAnimeList (en anglais), chargés à l'ouverture.
+// Résumé et genres depuis la fiche de l'œuvre (en anglais), chargés à l'ouverture.
 function Synopsis({ item }) {
     const [data, setData] = useState(null);
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
         setData(null);
-        if (!item.malId) return;
+        if (!item.malId && !item.anilistId) return;
         let alive = true;
-        getEntry(item.type, item.malId)
-            .then((e) => alive && e && setData({ synopsis: e.synopsis, genres: (e.genres || []).map((g) => g.name), score: e.score }))
+        findEntry({ type: item.type, title: item.title, malId: item.malId, anilistId: item.anilistId })
+            .then((e) => alive && e && setData(e))
             .catch(() => {});
         return () => {
             alive = false;
         };
-    }, [item.malId, item.type]);
+    }, [item.malId, item.anilistId, item.type, item.title]);
 
     if (!data?.synopsis) return null;
-    const text = data.synopsis.replace(/\s*\[Written by MAL Rewrite\]\s*$/i, '');
+    const text = data.synopsis;
 
     return (
         <section className="synopsis">
             <h2 className="section-title">Résumé</h2>
             {(data.genres.length > 0 || data.score) && (
                 <div className="badges badges--quiet">
-                    {data.score && <span className="badge">Note MAL {data.score}</span>}
+                    {data.score && <span className="badge">Note {data.scoreSource} {String(data.score).replace('.', ',')}</span>}
                     {data.genres.slice(0, 6).map((g) => (
                         <span key={g} className="badge">
                             {g}
@@ -321,10 +321,10 @@ function EditForm({ item, onClose }) {
         if (url && !/^https:\/\//.test(url)) return setError('Le lien doit commencer par https://');
         const identityChanged = cleanTitle !== item.title || type !== item.type;
         const changes = { title: cleanTitle, type, officialUrl: url || null };
-        if (identityChanged) Object.assign(changes, { malId: null, status: 'unknown', imageUrl: null, seasons: undefined, seasonProgress: undefined });
+        if (identityChanged) Object.assign(changes, { malId: null, anilistId: null, status: 'unknown', imageUrl: null, seasons: undefined, seasonProgress: undefined });
         updateItem(item.id, changes);
         onClose();
-        // Nouveau titre : on cherche la bonne fiche MyAnimeList.
+        // Nouveau titre : on cherche la bonne fiche.
         if (identityChanged) actions.refresh({ ...item, ...changes });
     };
 
