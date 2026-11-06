@@ -110,7 +110,7 @@ async function pagesFromArchive(file) {
 }
 
 let pdfjsPromise = null;
-function loadPdfJs() {
+export function loadPdfJs() {
     // Chargé seulement si on importe un PDF (bibliothèque lourde).
     pdfjsPromise ||= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]).then(([lib, worker]) => {
         lib.GlobalWorkerOptions.workerSrc = worker.default;
@@ -173,9 +173,12 @@ async function optimize(blob) {
 
 export async function extractPages(chapter, onStep) {
     let pages;
-    if (chapter.kind === 'archive') pages = await pagesFromArchive(chapter.files[0]);
+    if (chapter.splitPages?.length) pages = [];
+    else if (chapter.kind === 'archive') pages = await pagesFromArchive(chapter.files[0]);
     else if (chapter.kind === 'pdf') pages = await pagesFromPdf(chapter.files[0], (i, n) => onStep?.(`Page ${i} sur ${n}`));
     else pages = chapter.files.map((f) => (f.type ? f : new Blob([f], { type: IMAGE_EXT[extOf(f.name)] })));
+    // Capture de page web déjà découpée en planches dans l'éditeur.
+    if (chapter.splitPages?.length) pages = chapter.splitPages;
     if (!pages.length) throw new Error('Aucune image trouvée dans ce fichier');
     const out = [];
     for (let i = 0; i < pages.length; i++) {

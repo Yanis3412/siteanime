@@ -70,6 +70,15 @@ Les images sont envoyées directement du navigateur vers R2 grâce à des liens 
 (Vercel ne sert que de guichet). Les pages PNG trop lourdes sont converties en WebP avant l'envoi.
 Le site refuse les imports au-delà de 9,5 Go au total, pour rester dans l'offre gratuite de R2 (10 Go).
 
+**Captures de page entière** (GoFullPage, etc.) : le PDF ou l'image très haute est reconnu à l'import et
+le bouton **Découper par planche** ouvre un éditeur (`src/lib/strip.js`, `src/components/StripEditor.jsx`).
+Les morceaux sont recollés, la colonne du manga est repérée, l'en-tête et le bas du site sont écartés et des
+coupures sont proposées ; on les ajoute, déplace ou retire avant d'importer.
+
+**Nettoyage** : la date d'import de chaque chapitre est enregistrée (affichée dans la liste). L'administrateur
+peut supprimer d'un coup, sur tous les profils, les chapitres importés il y a plus de 2 mois
+(menu du profil → *Supprimer les chapitres de plus de 2 mois*, `api/admin.js`).
+
 ### Mise en place
 
 1. Créer un compte Cloudflare et activer R2.

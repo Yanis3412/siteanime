@@ -1,6 +1,6 @@
 // Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { Download, ImagePlus, KeyRound, LogOut, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
+import { CalendarX, Download, ImagePlus, KeyRound, LogOut, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
@@ -10,6 +10,7 @@ import { PinField } from './PinField.jsx';
 import { PhotoField } from './PhotoField.jsx';
 import { ManageProfilesDialog } from './ManageProfiles.jsx';
 import { buildExport, downloadJson, parseImport } from '../lib/transfer.js';
+import { formatBytes } from '../lib/importer.js';
 import { api, avatarUrl } from '../lib/api.js';
 import { load } from '../lib/storage.js';
 
@@ -72,6 +73,42 @@ export function ProfileMenu() {
         }
     };
 
+    // Supprime les chapitres importés il y a plus de 2 mois, sur tous les profils.
+    const cleanup = async () => {
+        const token = load('adminToken');
+        try {
+            const preview = await api.adminCleanupPreview(token);
+            const date = new Date(preview.cutoff).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            if (!preview.chapters) {
+                toast(`Aucun chapitre importé avant le ${date}.`);
+                return;
+            }
+            const who = preview.profiles.map((p) => `${p.name} (${p.chapters})`).join(', ');
+            const ok = await confirm({
+                title: `Supprimer ${preview.chapters} chapitre${preview.chapters > 1 ? 's' : ''} ?`,
+                message: `Tous les chapitres importés avant le ${date}, sur tous les profils : ${who}. Leurs pages et leurs versions en couleur seront effacées (${formatBytes(preview.bytes)} libérés). La progression de lecture ne change pas.`,
+                confirmLabel: 'Supprimer les chapitres',
+                danger: true,
+            });
+            if (!ok) return;
+            app.setTask({ label: 'Suppression des anciens chapitres', done: 0, total: preview.chapters });
+            let removed = 0;
+            let freed = 0;
+            for (let i = 0; i < 30; i++) {
+                const res = await api.adminCleanup(token);
+                removed += res.removed;
+                freed += res.freed;
+                app.setTask({ label: 'Suppression des anciens chapitres', done: Math.min(removed, preview.chapters), total: preview.chapters });
+                if (res.done) break;
+            }
+            toast(`${removed} chapitre${removed > 1 ? 's' : ''} supprimé${removed > 1 ? 's' : ''}, ${formatBytes(freed)} libérés.`, { tone: 'success' });
+        } catch (err) {
+            toast(err.message, { tone: 'error' });
+        } finally {
+            app.setTask(null);
+        }
+    };
+
     const removeProfile = async () => {
         const ok = await confirm({
             title: `Supprimer le profil ${profile.name} ?`,
@@ -121,6 +158,7 @@ export function ProfileMenu() {
                     { label: theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre', icon: theme === 'dark' ? Sun : Moon, onSelect: toggleTheme },
                     hasAdminAccess && 'separator',
                     hasAdminAccess && { label: 'Gérer les profils', icon: UserCog, onSelect: () => setDialog('manage') },
+                    hasAdminAccess && { label: 'Supprimer les chapitres de plus de 2 mois', icon: CalendarX, onSelect: cleanup },
                     hasAdminAccess && { label: 'Réimporter l’ancienne version', icon: RotateCcw, onSelect: reimport },
                     !readOnly && !profile.isAdmin && { label: 'Supprimer le profil', icon: Trash2, danger: true, onSelect: removeProfile },
                     !readOnly && 'separator',

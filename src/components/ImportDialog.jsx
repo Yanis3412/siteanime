@@ -1,8 +1,10 @@
 // Fenêtre d'import de chapitres : sélection des fichiers, vérification des numéros, envoi.
 import { useRef, useState } from 'react';
-import { FolderOpen, Upload } from 'lucide-react';
+import { FolderOpen, Scissors, Upload } from 'lucide-react';
 import { Dialog } from './ui/Dialog.jsx';
+import { StripEditor } from './StripEditor.jsx';
 import { extractPages, filesFromDrop, filesFromInput, formatBytes, formatNum, groupIntoChapters, uploadChapter } from '../lib/importer.js';
+import { hasTallImages, isCapturePdf } from '../lib/strip.js';
 
 export function ImportDialog({ open, onClose, item, profileId, token, existing, onImported }) {
     // Pendant l'envoi, la fenêtre ne se ferme pas par erreur (Échap, clic à côté).
@@ -19,6 +21,7 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
     const [unsupported, setUnsupported] = useState([]);
     const [phase, setPhase] = useState('pick'); // pick | review | uploading | done
     const [dragging, setDragging] = useState(false);
+    const [splitting, setSplitting] = useState(null); // ligne en cours de découpage
     const fileInput = useRef(null);
     const folderInput = useRef(null);
 
@@ -31,6 +34,11 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
         );
         setUnsupported((u) => [...u, ...bad]);
         if (chapters.length) setPhase('review');
+        // Capture de page web (GoFullPage…) : les planches sont coupées n'importe où, on proposera de les redécouper.
+        for (const c of chapters) {
+            const check = c.kind === 'pdf' ? isCapturePdf(c.files[0]) : c.kind === 'images' ? hasTallImages(c.files) : Promise.resolve(false);
+            check.then((capture) => capture && update(c.id, { capture: true }));
+        }
     };
 
     const update = (id, changes) => setRows((r) => r.map((row) => (row.id === id ? { ...row, ...changes } : row)));
@@ -141,9 +149,20 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
                                     <span className="import__name">{row.label}</span>
                                     <span className="import__meta">
                                         {row.state === 'ready'
-                                            ? [row.kind === 'pdf' ? 'PDF' : row.kind === 'archive' ? 'Archive' : `${row.pages} images`, formatBytes(row.size)].join(', ')
+                                            ? row.splitPages
+                                                ? `Découpé en ${row.splitPages.length} planches`
+                                                : [row.kind === 'pdf' ? 'PDF' : row.kind === 'archive' ? 'Archive' : `${row.pages} images`, formatBytes(row.size)].join(', ')
                                             : row.step}
                                     </span>
+                                    {row.state === 'ready' && row.capture && !row.splitPages && (
+                                        <span className="import__note">Capture d’une page web : les planches sont coupées au mauvais endroit.</span>
+                                    )}
+                                    {row.state === 'ready' && (row.capture || row.splitPages) && (
+                                        <button type="button" className="btn btn--secondary btn--sm import__split" onClick={() => setSplitting(row)}>
+                                            <Scissors size={15} aria-hidden="true" />
+                                            {row.splitPages ? 'Modifier le découpage' : 'Découper par planche'}
+                                        </button>
+                                    )}
                                     {row.state === 'ready' && (replaces || dup) && (
                                         <span className={dup ? 'import__error' : 'import__note'}>{dup ? 'Ce numéro est utilisé deux fois.' : 'Remplacera le chapitre déjà importé.'}</span>
                                     )}
@@ -205,6 +224,15 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
                 )}
             </div>
             {phase === 'uploading' && <p className="import__hint">Garde cette page ouverte pendant l’import.</p>}
+
+            <StripEditor
+                row={splitting}
+                onClose={() => setSplitting(null)}
+                onDone={({ pages, split }) => {
+                    update(splitting.id, { splitPages: pages, split, size: pages.reduce((n, p) => n + p.size, 0) });
+                    setSplitting(null);
+                }}
+            />
         </div>
     );
 }
