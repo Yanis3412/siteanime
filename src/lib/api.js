@@ -67,6 +67,8 @@ export const api = {
         cancel: (jobId, token) => request('POST', 'jobs', { body: { action: 'cancel', jobId }, token }),
     },
 
+    getSites: () => request('GET', 'sites'),
+    saveSites: (groups, token) => request('PUT', 'sites', { body: { groups }, token }),
     adminCleanupPreview: (token) => request('GET', 'admin?cleanup=1', { token }),
     adminCleanup: (token) => request('POST', 'admin', { body: { action: 'cleanup' }, token }),
 };
