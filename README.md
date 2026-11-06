@@ -124,6 +124,13 @@ mais est désactivée (voir le README du dossier `traducteur/`).
 Les infos (titres, couvertures, chapitres, saisons, prochains épisodes) viennent d'**AniList**,
 avec **Jikan (MyAnimeList)** en secours si AniList ne répond pas (`src/lib/meta.js`).
 
+## Activité
+
+Page **Activité** : chiffres de chaque profil (épisodes vus, temps estimé, chapitres lus, séries finies, en cours,
+watchlist) et fil des dernières nouvelles. Le fil est rempli côté serveur à chaque enregistrement d'une liste
+(`api/_lib/activity.js` compare l'avant et l'après : ajouts, progression regroupée par séance de 6 h,
+séries terminées, watchlist, recommandations) et à chaque chapitre importé ; un journal de 100 lignes par profil.
+
 ## Appli sur téléphone
 
 Le site s'installe comme une appli (PWA) : `public/manifest.webmanifest`, icônes dans `public/icons/`,

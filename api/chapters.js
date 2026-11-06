@@ -14,6 +14,7 @@ import { getBlob, storageLimit } from './_lib/blob.js';
 import { route, send, body, cleanString, HttpError } from './_lib/http.js';
 import { keys } from './_lib/store.js';
 import { requireWrite } from './_lib/auth.js';
+import { recordImport } from './_lib/activity.js';
 import {
     chapterKeys,
     MAX_PAGES,
@@ -184,6 +185,7 @@ export default route({
             await saveChapters(kv, pending.profileId, pending.itemId, next);
             await addUsage(kv, pending.profileId, bytes);
             await kv.del(chapterKeys.upload(uploadId));
+            await recordImport(kv, pending.profileId, pending.itemId, pending.num);
             return send(res, 200, { chapter: publicChapter(chapter), replaced: !!existing });
         }
 
