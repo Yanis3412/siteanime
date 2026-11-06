@@ -1,6 +1,6 @@
 // Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { CalendarX, Download, ImagePlus, KeyRound, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
+import { CalendarX, Download, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
@@ -51,25 +51,6 @@ export function ProfileMenu() {
             }
         };
         input.click();
-    };
-
-    const reimport = async () => {
-        const token = app.session.token;
-        try {
-            const status = await api.adminStatus(token);
-            const ok = await confirm({
-                title: 'Réimporter l’ancienne version ?',
-                message: `La progression de l’ancien site (${status.legacyProfiles} profils, ${status.legacyItems} titres) remplacera celle de la nouvelle version. Les chapitres importés et les titres ajoutés depuis sont conservés. À faire une seule fois, juste après la mise en ligne.`,
-                confirmLabel: 'Réimporter',
-                danger: true,
-            });
-            if (!ok) return;
-            const res = await api.adminReimport(token);
-            toast(`${res.profiles} profils et ${res.items} titres réimportés.`, { tone: 'success' });
-            await app.leave();
-        } catch (err) {
-            toast(err.message, { tone: 'error' });
-        }
     };
 
     // Supprime les chapitres importés il y a plus de 2 mois, sur tous les profils.
@@ -159,7 +140,6 @@ export function ProfileMenu() {
                     hasAdminAccess && 'separator',
                     hasAdminAccess && { label: 'Gérer les profils', icon: UserCog, onSelect: () => setDialog('manage') },
                     hasAdminAccess && { label: 'Supprimer les chapitres de plus de 2 mois', icon: CalendarX, onSelect: cleanup },
-                    hasAdminAccess && { label: 'Réimporter l’ancienne version', icon: RotateCcw, onSelect: reimport },
                     !readOnly && !profile.isAdmin && { label: 'Supprimer le profil', icon: Trash2, danger: true, onSelect: removeProfile },
                 ]}
             />
