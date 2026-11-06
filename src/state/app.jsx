@@ -49,6 +49,8 @@ export function AppProvider({ children }) {
 
     // Jeton utilisable pour écrire dans un profil : le sien, ou celui de l'admin connecté sur cet appareil.
     const writeTokenFor = useCallback((profileId) => tokens.get(profileId) || load('adminToken'), []);
+    // asAdmin : action faite depuis « Gérer les profils », toujours avec la session administrateur.
+    const tokenFor = useCallback((profileId, asAdmin) => (asAdmin ? load('adminToken') : writeTokenFor(profileId)), [writeTokenFor]);
 
     const loadLibrary = useCallback(async (profileId) => {
         const cached = load(`library.${profileId}`);
@@ -161,28 +163,42 @@ export function AppProvider({ children }) {
     );
 
     const renameProfile = useCallback(
-        async (profileId, name) => {
-            await api.updateProfile(profileId, { name }, writeTokenFor(profileId));
+        async (profileId, name, { asAdmin = false } = {}) => {
+            await api.updateProfile(profileId, { name }, tokenFor(profileId, asAdmin));
             await refreshProfiles();
         },
-        [refreshProfiles, writeTokenFor],
+        [refreshProfiles, tokenFor],
     );
 
     const changePin = useCallback(
-        async (profileId, pin) => {
-            const data = await api.updateProfile(profileId, { pin }, writeTokenFor(profileId));
+        async (profileId, pin, { asAdmin = false } = {}) => {
+            const data = await api.updateProfile(profileId, { pin }, tokenFor(profileId, asAdmin));
             if (data.token) {
                 tokens.set(profileId, data.token);
                 if (data.profile.isAdmin) save('adminToken', data.token);
                 setSession((s) => (s?.profileId === profileId ? { ...s, token: data.token } : s));
+            } else {
+                // Code changé par l'admin : l'ancienne session de ce profil sur cet appareil ne vaut plus rien.
+                tokens.set(profileId, null);
+                setSession((s) => (s?.profileId === profileId && s.mode === 'owner' ? { ...s, token: load('adminToken') } : s));
             }
         },
-        [writeTokenFor],
+        [tokenFor],
+    );
+
+    const setProfilePhoto = useCallback(
+        async (profileId, image, { asAdmin = false } = {}) => {
+            const token = tokenFor(profileId, asAdmin);
+            if (image) await api.setAvatar(profileId, image, token);
+            else await api.removeAvatar(profileId, token);
+            await refreshProfiles();
+        },
+        [refreshProfiles, tokenFor],
     );
 
     const deleteProfile = useCallback(
-        async (profileId) => {
-            await api.deleteProfile(profileId, writeTokenFor(profileId));
+        async (profileId, { asAdmin = false } = {}) => {
+            await api.deleteProfile(profileId, tokenFor(profileId, asAdmin));
             tokens.set(profileId, null);
             save(`library.${profileId}`, null);
             if (sessionRef.current?.profileId === profileId) {
@@ -192,7 +208,7 @@ export function AppProvider({ children }) {
             }
             await refreshProfiles();
         },
-        [refreshProfiles, writeTokenFor],
+        [refreshProfiles, tokenFor],
     );
 
     // ---------- Enregistrement automatique ----------
@@ -396,6 +412,7 @@ export function AppProvider({ children }) {
         logout,
         renameProfile,
         changePin,
+        setProfilePhoto,
         deleteProfile,
         updateItem,
         addItem,

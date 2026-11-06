@@ -406,6 +406,38 @@
     border: 1.5px dashed var(--line-strong);
     color: var(--text-muted) !important;
 }
+.avatar--photo {
+    overflow: hidden;
+    background: var(--cover-bg) !important;
+}
+.avatar--photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Choix de la photo */
+.photo-field {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+}
+.photo-field.is-busy .avatar {
+    opacity: 0.55;
+}
+.photo-field__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+}
+.photo-field__actions .field__hint {
+    flex-basis: 100%;
+    margin: 0;
+    max-width: 34ch;
+}
 
 /* ---------- Dialogues ---------- */
 .dialog {

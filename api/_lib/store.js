@@ -9,6 +9,7 @@ export const keys = {
     library: (id) => `v2:library:${id}`,
     session: (token) => `v2:session:${token}`,
     fails: (id) => `v2:fails:${id}`,
+    avatar: (id) => `v2:avatar:${id}`,
     migrated: 'v2:migrated',
     migrationLock: 'v2:migration-lock',
     legacy: 'anime-profiles',
@@ -24,6 +25,8 @@ export function publicProfile(p) {
         hasPin: !!p.pinHash,
         itemCount: p.itemCount || 0,
         createdAt: p.createdAt || 0,
+        // Version de la photo (sert aussi à invalider le cache), null = initiales.
+        avatar: p.avatarVersion || null,
     };
 }
 
@@ -204,6 +207,7 @@ export async function migrateFromLegacy(kv, { hashPin, verifyPin } = {}) {
             pinHash,
             pinVersion,
             itemCount: items.length,
+            ...(existing?.avatarVersion ? { avatarVersion: existing.avatarVersion } : {}),
             createdAt: existing?.createdAt ?? (id === 'default' ? 0 : Number(String(id).replace(/\D/g, '')) || Date.now()),
             updatedAt: Date.now(),
         };

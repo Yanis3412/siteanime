@@ -1,6 +1,7 @@
 """Traducteur du site Liste.
 
-Tourne sur le PC qui a la carte graphique NVIDIA. Il récupère les demandes faites sur le site
+Tourne sur un PC Windows : avec la carte graphique si c'est une NVIDIA, sinon avec le processeur
+(plus lent, mais ça marche partout). Il récupère les demandes faites sur le site
 (traduire en français, coloriser, ou les deux), traite les pages avec manga-image-translator,
 puis renvoie les pages traitées au site. Laisse la fenêtre ouverte pour qu'il travaille.
 
@@ -42,7 +43,8 @@ IDLE_SECONDS = 20
 HEARTBEAT_SECONDS = 20
 WORKER_NAME = platform.node() or "PC"
 
-# Réglages prévus pour une carte de 4 Go (RTX 2050) : détection et effacement du texte en taille réduite.
+# Réglages raisonnables pour une petite carte (4 Go) comme pour le processeur :
+# détection et effacement du texte en taille réduite.
 BASE_CONFIG = {
     "detector": {"detector": "default", "detection_size": 1536},
     "ocr": {"ocr": "48px"},
@@ -155,6 +157,24 @@ def setup(config):
 
 # ---------- Traitement d'une demande ----------
 
+_gpu = None
+
+
+def gpu_available():
+    """Vrai si PyTorch voit une carte NVIDIA (CUDA). Vérifié une seule fois."""
+    global _gpu
+    if _gpu is None:
+        try:
+            out = subprocess.run(
+                [sys.executable, "-c", "import torch; print(torch.cuda.is_available())"],
+                capture_output=True, text=True, timeout=180,
+            )
+            _gpu = out.stdout.strip().endswith("True")
+        except Exception:  # noqa: BLE001
+            _gpu = False
+    return _gpu
+
+
 def mit_config(kind):
     cfg = copy.deepcopy(BASE_CONFIG)
     if kind in ("color", "fr-color"):
@@ -238,7 +258,9 @@ def _process(site, config, job):
     cfg_path = folder / "config.json"
     cfg_path.write_text(json.dumps(mit_config(job["kind"])), encoding="utf-8")
 
-    cmd = [sys.executable, "-m", "manga_translator", "-v", "--use-gpu", "--ignore-errors"]
+    cmd = [sys.executable, "-m", "manga_translator", "-v", "--ignore-errors"]
+    if gpu_available():
+        cmd.append("--use-gpu")
     if FONT_FILE.exists():
         cmd += ["--font-path", str(FONT_FILE)]
     cmd += ["local", "-i", str(in_dir), "-o", str(out_dir), "-f", "png", "--overwrite", "--config-file", str(cfg_path)]
@@ -308,7 +330,11 @@ def main():
 
     site = Site(config["site"], config["token"])
     print("\n  Traducteur lancé. Laisse cette fenêtre ouverte ; Ctrl+C pour l'arrêter.")
-    print("  Le premier chapitre est plus long : les modèles (quelques Go) se téléchargent une seule fois.\n")
+    print("  Le premier chapitre est plus long : les modèles (quelques Go) se téléchargent une seule fois.")
+    if gpu_available():
+        print("  Mode : carte graphique NVIDIA.\n")
+    else:
+        print("  Mode : processeur (pas de carte NVIDIA). Compte environ 1 minute par page ; le PC sera chargé pendant le travail.\n")
     log(f"En attente de demandes sur {config['site']}")
 
     current = None
