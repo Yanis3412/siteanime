@@ -1,6 +1,6 @@
 // Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { CalendarX, Download, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
+import { CalendarX, DatabaseBackup, Download, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
@@ -9,6 +9,7 @@ import { Dialog } from './ui/Dialog.jsx';
 import { PinField } from './PinField.jsx';
 import { PhotoField } from './PhotoField.jsx';
 import { ManageProfilesDialog } from './ManageProfiles.jsx';
+import { BackupsDialog } from './Backups.jsx';
 import { buildExport, downloadJson, parseImport } from '../lib/transfer.js';
 import { formatBytes } from '../lib/importer.js';
 import { api, avatarUrl } from '../lib/api.js';
@@ -17,7 +18,7 @@ export function ProfileMenu() {
     const app = useApp();
     const { profile, readOnly, library, hasAdminAccess } = app;
     const { toast, confirm, theme, toggleTheme } = useUi();
-    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'photo' | 'manage'
+    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'photo' | 'manage' | 'backups'
 
     if (!profile) return null;
 
@@ -139,6 +140,7 @@ export function ProfileMenu() {
                     { label: theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre', icon: theme === 'dark' ? Sun : Moon, onSelect: toggleTheme },
                     hasAdminAccess && 'separator',
                     hasAdminAccess && { label: 'Gérer les profils', icon: UserCog, onSelect: () => setDialog('manage') },
+                    hasAdminAccess && { label: 'Sauvegardes', icon: DatabaseBackup, onSelect: () => setDialog('backups') },
                     hasAdminAccess && { label: 'Supprimer les chapitres de plus de 2 mois', icon: CalendarX, onSelect: cleanup },
                     !readOnly && !profile.isAdmin && { label: 'Supprimer le profil', icon: Trash2, danger: true, onSelect: removeProfile },
                 ]}
@@ -154,6 +156,7 @@ export function ProfileMenu() {
                 </div>
             </Dialog>
             <ManageProfilesDialog open={dialog === 'manage'} onClose={() => setDialog(null)} />
+            <BackupsDialog open={dialog === 'backups'} onClose={() => setDialog(null)} />
         </>
     );
 }

@@ -1473,3 +1473,62 @@
         padding-right: 28px;
     }
 }
+
+/* ---------- Sauvegardes (administrateur) ---------- */
+.backups {
+    display: grid;
+    gap: var(--s3);
+}
+.backups__create {
+    justify-self: start;
+}
+.backups__list,
+.backups__choices {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.backups__row,
+.backups__choice {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s3) 0;
+    border-top: 1px solid var(--line);
+}
+.backups__list li:last-child .backups__row,
+.backups__choices li:last-child .backups__choice {
+    border-bottom: 1px solid var(--line);
+}
+.backups__choice {
+    gap: var(--s3);
+    cursor: pointer;
+}
+.backups__choice.is-disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+.backups__choice input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}
+.backups__main {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+.backups__date {
+    font-weight: 650;
+}
+.backups__date::first-letter {
+    text-transform: uppercase;
+}
+.backups__meta {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.backups .manage-back {
+    justify-self: start;
+}
