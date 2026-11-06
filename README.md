@@ -124,13 +124,11 @@ mais est désactivée (voir le README du dossier `traducteur/`).
 Les infos (titres, couvertures, chapitres, saisons, prochains épisodes) viennent d'**AniList**,
 avec **Jikan (MyAnimeList)** en secours si AniList ne répond pas (`src/lib/meta.js`).
 
-## Mise en ligne de la refonte
+## Données de l'ancienne version
 
-1. Tester l'URL de preview de la branche `refonte`.
-2. Fusionner la branche dans `main` : Vercel déploie la nouvelle version.
-3. Se connecter avec le profil administrateur, puis menu du profil → **Réimporter l'ancienne version**,
-   pour récupérer les changements faits sur l'ancien site pendant les tests.
-4. Changer le code administrateur : l'ancien était écrit dans le code public du site.
+Les profils de l'ancien site (clé Redis `anime-profiles`) ont été repris automatiquement au premier
+démarrage de la refonte (`ensureMigrated`, `api/_lib/store.js`). Cette clé n'est plus lue ni modifiée ;
+elle reste en place comme copie de secours.
 
 ## Développement local
 

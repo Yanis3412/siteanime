@@ -67,8 +67,6 @@ export const api = {
         cancel: (jobId, token) => request('POST', 'jobs', { body: { action: 'cancel', jobId }, token }),
     },
 
-    adminStatus: (token) => request('GET', 'admin', { token }),
-    adminReimport: (token) => request('POST', 'admin', { body: { action: 'reimport' }, token }),
     adminCleanupPreview: (token) => request('GET', 'admin?cleanup=1', { token }),
     adminCleanup: (token) => request('POST', 'admin', { body: { action: 'cleanup' }, token }),
 };
