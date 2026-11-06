@@ -53,6 +53,34 @@ function r2Storage({ accountId, accessKeyId, secretAccessKey, bucket }) {
             if (!res.ok) throw new Error(`R2 HEAD ${res.status}`);
             return Number(res.headers.get('content-length') || 0);
         },
+        // Petits fichiers écrits par le serveur lui-même (sauvegardes).
+        async putJson(key, data) {
+            const res = await client.fetch(objectUrl(key), {
+                method: 'PUT',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            if (!res.ok) throw new Error(`R2 PUT ${res.status}`);
+        },
+        async getJson(key) {
+            const res = await client.fetch(objectUrl(key));
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error(`R2 GET ${res.status}`);
+            return res.json();
+        },
+        // Liste les fichiers d'un dossier (ListObjectsV2), jusqu'à 1000.
+        async list(prefix) {
+            const url = new URL(base);
+            url.searchParams.set('list-type', '2');
+            url.searchParams.set('prefix', prefix);
+            const res = await client.fetch(url.toString());
+            if (!res.ok) throw new Error(`R2 LIST ${res.status}`);
+            const xml = await res.text();
+            return [...xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)].map(([, c]) => ({
+                key: unescapeXml(/<Key>([\s\S]*?)<\/Key>/.exec(c)?.[1] || ''),
+                size: Number(/<Size>(\d+)<\/Size>/.exec(c)?.[1] || 0),
+            }));
+        },
         // Suppression par lots de 1000 (DeleteObjects).
         async removeMany(keys) {
             for (let i = 0; i < keys.length; i += 1000) {
@@ -90,7 +118,31 @@ function devStorage(dir) {
         async removeMany(keys) {
             await Promise.all(keys.map((k) => fs.rm(file(k), { force: true })));
         },
+        async putJson(key, data) {
+            await fs.mkdir(path.dirname(file(key)), { recursive: true });
+            await fs.writeFile(file(key), JSON.stringify(data));
+        },
+        async getJson(key) {
+            try {
+                return JSON.parse(await fs.readFile(file(key), 'utf8'));
+            } catch {
+                return null;
+            }
+        },
+        async list(prefix) {
+            const folder = file(prefix.replace(/\/$/, ''));
+            try {
+                const names = await fs.readdir(folder);
+                return Promise.all(names.map(async (n) => ({ key: `${prefix.replace(/\/?$/, '/')}${n}`, size: (await fs.stat(path.join(folder, n))).size })));
+            } catch {
+                return [];
+            }
+        },
     };
+}
+
+function unescapeXml(s) {
+    return s.replace(/&(lt|gt|amp|apos|quot);/g, (_, e) => ({ lt: '<', gt: '>', amp: '&', apos: "'", quot: '"' })[e]);
 }
 
 function escapeXml(s) {

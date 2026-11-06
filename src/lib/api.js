@@ -69,6 +69,13 @@ export const api = {
 
     getSites: () => request('GET', 'sites'),
     saveSites: (groups, token) => request('PUT', 'sites', { body: { groups }, token }),
+    backups: {
+        list: (token) => request('GET', 'backup?list=1', { token }),
+        show: (key, token) => request('GET', `backup?${qs({ show: key })}`, { token }),
+        download: (key, token) => request('GET', `backup?${qs({ download: key })}`, { token }),
+        create: (token) => request('POST', 'backup', { body: { action: 'create' }, token }),
+        restore: (key, profileIds, token) => request('POST', 'backup', { body: { action: 'restore', key, profileIds }, token }),
+    },
     adminStorage: (token) => request('GET', 'admin?storage=1', { token }),
     adminCleanupPreview: (token) => request('GET', 'admin?cleanup=1', { token }),
     adminCleanup: (token) => request('POST', 'admin', { body: { action: 'cleanup' }, token }),

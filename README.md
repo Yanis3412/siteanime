@@ -124,6 +124,15 @@ mais est désactivée (voir le README du dossier `traducteur/`).
 Les infos (titres, couvertures, chapitres, saisons, prochains épisodes) viennent d'**AniList**,
 avec **Jikan (MyAnimeList)** en secours si AniList ne répond pas (`src/lib/meta.js`).
 
+## Sauvegardes
+
+Chaque lundi vers 4 h, une tâche planifiée de Vercel (`vercel.json`, « crons ») appelle `/api/backup`, qui
+enregistre dans R2 (`backups/`) les listes de tous les profils et la page Sites. Les 10 dernières sauvegardes
+sont gardées. L'administrateur peut aussi en faire une, la télécharger ou restaurer une ou plusieurs listes
+(menu du profil → **Sauvegardes**) ; l'état d'avant est sauvegardé automatiquement avant toute restauration.
+Optionnel : définir `CRON_SECRET` dans Vercel pour que seule la tâche planifiée puisse déclencher la sauvegarde
+automatique (sinon, elle est limitée à une tous les 6 jours).
+
 ## Données de l'ancienne version
 
 Les profils de l'ancien site (clé Redis `anime-profiles`) ont été repris automatiquement au premier
