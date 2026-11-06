@@ -10,6 +10,9 @@ const GROUPS = [
             { name: 'MANGA Plus', url: 'https://mangaplus.shueisha.co.jp/updates' },
             { name: 'Sushi Scan', url: 'https://sushiscan.net/' },
             { name: 'Asura Comic', url: 'https://asuracomic.net/' },
+            { name: 'Manga Scantrad', url: 'https://manga-scantrad.io/' },
+            { name: 'Punk Records', url: 'https://punkrecordz.com/' },
+            { name: 'Manga Nova', url: 'https://www.manga-nova.com/' },
         ],
     },
     {
