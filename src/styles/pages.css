@@ -1017,3 +1017,45 @@
         flex-wrap: wrap;
     }
 }
+
+/* Traduction des chapitres */
+.chapters__worker {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.chapters__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    flex: none;
+}
+.chapters__worker.is-online .chapters__dot {
+    background: var(--completed);
+}
+.chapter__variant {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 0 7px;
+    border-radius: var(--r-pill);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+.chapter__job {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+.chapter__job.is-running {
+    color: var(--ongoing);
+}
+.chapter__job.is-error {
+    color: var(--danger);
+}

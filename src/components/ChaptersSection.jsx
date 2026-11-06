@@ -1,7 +1,7 @@
-// Bibliothèque de chapitres d'un manga : liste, reprise de lecture, import, stockage utilisé.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// Bibliothèque de chapitres d'un manga : liste, reprise de lecture, import, traduction, stockage utilisé.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownUp, BookOpen, Check, CircleDot, MoreHorizontal, Trash2, Upload } from 'lucide-react';
+import { ArrowDownUp, BookOpen, Check, ChevronDown, CircleDot, Languages, MoreHorizontal, Palette, Trash2, Upload, X } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { api } from '../lib/api.js';
@@ -11,6 +11,13 @@ import { formatBytes, formatNum } from '../lib/importer.js';
 import { isChapterRead, missingRanges } from '../lib/items.js';
 
 const PAGE = 40;
+
+// Versions qu'on peut demander au traducteur.
+export const KINDS = {
+    fr: { short: 'VF', job: 'Traduction', action: 'Traduire en français', redo: 'Refaire la traduction', icon: Languages },
+    color: { short: 'Couleur', job: 'Colorisation', action: 'Coloriser', redo: 'Refaire la colorisation', icon: Palette },
+    'fr-color': { short: 'VF couleur', job: 'Traduction et couleur', action: 'Traduire et coloriser', redo: 'Refaire la traduction en couleur', icon: Palette },
+};
 
 export function ChaptersSection({ item }) {
     const { session, writeTokenFor } = useApp();
@@ -23,6 +30,10 @@ export function ChaptersSection({ item }) {
     const profileId = session.profileId;
     const token = writeTokenFor(profileId);
 
+    const [jobs, setJobs] = useState([]);
+    const [worker, setWorker] = useState(null);
+    const activeRef = useRef(0);
+
     const load = useCallback(() => {
         api.chapters
             .list(profileId, item.id, token)
@@ -33,7 +44,61 @@ export function ChaptersSection({ item }) {
             .catch((e) => setError(e.message));
     }, [profileId, item.id, token]);
 
+    const loadJobs = useCallback(async () => {
+        try {
+            const d = await api.jobs.list(profileId, item.id, token);
+            const active = d.jobs.filter((j) => j.status !== 'error').length;
+            // Une demande vient de se terminer : on recharge la liste pour afficher la nouvelle version.
+            if (active < activeRef.current) load();
+            activeRef.current = active;
+            setJobs(d.jobs);
+            setWorker(d.worker);
+        } catch {
+            /* état de la file indisponible : on réessaiera */
+        }
+    }, [profileId, item.id, token, load]);
+
     useEffect(load, [load]);
+    useEffect(() => {
+        loadJobs();
+    }, [loadJobs]);
+
+    // Suivi en direct tant que des demandes sont en attente ou en cours.
+    const hasActive = jobs.some((j) => j.status === 'queued' || j.status === 'running');
+    useEffect(() => {
+        if (!hasActive) return;
+        const timer = setInterval(loadJobs, 5000);
+        return () => clearInterval(timer);
+    }, [hasActive, loadJobs]);
+
+    const jobFor = (num) => jobs.filter((j) => j.num === num);
+
+    const requestKind = async (kind, nums) => {
+        if (!nums.length) return toast('Aucun chapitre à traiter.');
+        try {
+            const res = await api.jobs.request({ profileId, itemId: item.id, nums, kind }, token);
+            setWorker(res.worker);
+            const count = res.jobs.length;
+            toast(
+                count
+                    ? `${count} chapitre${count > 1 ? 's' : ''} en attente de ${KINDS[kind].job.toLowerCase()}.${res.worker?.online ? '' : ' Le traducteur est éteint : ce sera fait dès qu’il sera lancé.'}`
+                    : 'Ces chapitres sont déjà en attente.',
+                { tone: 'success', duration: 6000 },
+            );
+            loadJobs();
+        } catch (e) {
+            toast(e.message, { tone: 'error' });
+        }
+    };
+
+    const cancelJob = async (job) => {
+        try {
+            await api.jobs.cancel(job.id, token);
+            setJobs((list) => list.filter((j) => j.id !== job.id));
+        } catch (e) {
+            toast(e.message, { tone: 'error' });
+        }
+    };
 
     const chapters = data?.chapters || [];
     const sorted = useMemo(() => [...chapters].sort((a, b) => (desc ? b.num - a.num : a.num - b.num)), [chapters, desc]);
@@ -118,6 +183,27 @@ export function ChaptersSection({ item }) {
                     Chapitres <span className="chapters__count">{chapters.length || ''}</span>
                 </h2>
                 <div className="chapters__actions">
+                    {chapters.length > 0 && (
+                        <Menu
+                            label="Traduire ou coloriser des chapitres"
+                            trigger={(props) => (
+                                <button className="btn btn--secondary" {...props}>
+                                    <Languages size={16} aria-hidden="true" />
+                                    Traduire
+                                    <ChevronDown size={15} aria-hidden="true" />
+                                </button>
+                            )}
+                            items={Object.entries(KINDS).map(([kind, k]) => {
+                                const todo = chapters.filter((c) => !isChapterRead(c, item) && !c.variants?.includes(kind) && !jobFor(c.num).some((j) => j.kind === kind && j.status !== 'error'));
+                                return {
+                                    label: `${k.action} les non lus${todo.length ? ` (${todo.length})` : ''}`,
+                                    icon: k.icon,
+                                    disabled: !todo.length,
+                                    onSelect: () => requestKind(kind, todo.map((c) => c.num)),
+                                };
+                            })}
+                        />
+                    )}
                     {resume && (
                         <Link to={`/oeuvre/${item.id}/chapitre/${resume.num}`} className="btn btn--primary">
                             <BookOpen size={16} aria-hidden="true" />
@@ -148,6 +234,14 @@ export function ChaptersSection({ item }) {
                             {desc ? 'Plus récents d’abord' : 'Plus anciens d’abord'}
                         </button>
                     </div>
+                    {(jobs.length > 0 || (worker && !worker.online && hasActive)) && (
+                        <p className={`chapters__worker ${worker?.online ? 'is-online' : ''}`}>
+                            <span className="chapters__dot" aria-hidden="true" />
+                            {worker?.online
+                                ? 'Traducteur en ligne. Les demandes sont traitées une par une.'
+                                : 'Traducteur éteint. Les demandes seront traitées dès qu’il sera lancé sur le PC.'}
+                        </p>
+                    )}
                     <ul className="chapters__list">
                         {sorted.slice(0, shown).map((c) => {
                             const read = isChapterRead(c, item);
@@ -158,6 +252,17 @@ export function ChaptersSection({ item }) {
                                         <span className="chapter__num">Chapitre {formatNum(c.num)}</span>
                                         {c.title && <span className="chapter__title">{c.title}</span>}
                                         <span className="chapter__meta">{c.pages} pages</span>
+                                        {(c.variants || []).map((v) => (
+                                            <span key={v} className="chapter__variant">
+                                                {KINDS[v]?.short}
+                                            </span>
+                                        ))}
+                                        {jobFor(c.num).map((j) => (
+                                            <span key={j.id} className={`chapter__job is-${j.status}`} title={j.error || undefined}>
+                                                {KINDS[j.kind]?.job}
+                                                {j.status === 'queued' ? ' en attente' : j.status === 'running' ? ` : ${j.done}/${j.total || c.pages}` : ' en échec'}
+                                            </span>
+                                        ))}
                                         <span className={`chapter__state ${started ? 'is-started' : read ? 'is-read' : 'is-new'}`}>
                                             {read ? (
                                                 <>
@@ -183,6 +288,19 @@ export function ChaptersSection({ item }) {
                                             read
                                                 ? { label: 'Marquer comme non lu', icon: CircleDot, onSelect: () => setRead(c, false) }
                                                 : { label: 'Marquer comme lu', icon: Check, onSelect: () => setRead(c, true) },
+                                            'separator',
+                                            ...Object.entries(KINDS).map(([kind, k]) => {
+                                                const pending = jobFor(c.num).find((j) => j.kind === kind && j.status !== 'error');
+                                                return {
+                                                    label: pending ? `${k.job} déjà demandée` : c.variants?.includes(kind) ? k.redo : k.action,
+                                                    icon: k.icon,
+                                                    disabled: !!pending,
+                                                    onSelect: () => requestKind(kind, [c.num]),
+                                                };
+                                            }),
+                                            ...jobFor(c.num)
+                                                .filter((j) => j.status !== 'running')
+                                                .map((j) => ({ label: `Annuler : ${KINDS[j.kind]?.job.toLowerCase()}`, icon: X, onSelect: () => cancelJob(j) })),
                                             'separator',
                                             { label: 'Supprimer le chapitre', icon: Trash2, danger: true, onSelect: () => remove(c) },
                                         ]}

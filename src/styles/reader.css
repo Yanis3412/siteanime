@@ -289,3 +289,23 @@
         display: none;
     }
 }
+
+.reader__variants {
+    margin-right: var(--s2);
+    background: #101216;
+    border-color: var(--r-line);
+}
+.reader__variants .segmented__opt {
+    color: var(--r-muted);
+    white-space: nowrap;
+}
+.reader__variants .segmented__opt.is-active {
+    background: #2a2e36;
+    color: var(--r-text);
+    box-shadow: none;
+}
+@media (max-width: 600px) {
+    .reader__variants .segmented__opt {
+        padding: 0 8px;
+    }
+}

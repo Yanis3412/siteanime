@@ -26,7 +26,6 @@ import {
     allChapterKeys,
     chapterBytes,
     variantPageKeys,
-    VARIANTS,
     compactExts,
     publicChapter,
     loadChapters,
@@ -90,8 +89,9 @@ export default route({
         const index = chapters.findIndex((c) => c.num === num);
         if (index === -1) throw new HttpError(404, 'Chapitre introuvable');
         const chapter = chapters[index];
-        // ?variant=fr | color | fr-color : version traduite ou colorisée si elle existe.
-        const variant = VARIANTS.includes(req.query.variant) && chapter.variants?.[req.query.variant] ? req.query.variant : 'vo';
+        // ?variant=fr | color | fr-color : version préférée ; à défaut la plus proche, sinon la VO.
+        const FALLBACKS = { fr: ['fr', 'fr-color'], color: ['color', 'fr-color'], 'fr-color': ['fr-color', 'fr', 'color'] };
+        const variant = (FALLBACKS[req.query.variant] || []).find((v) => chapter.variants?.[v]) || 'vo';
         const keys = variant === 'vo' ? chapterPageKeys(chapter) : variantPageKeys(chapter, variant);
         const pages = await Promise.all(keys.map((k) => blob.signRead(k)));
         send(res, 200, {
