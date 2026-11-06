@@ -244,7 +244,9 @@ export function ChaptersSection({ item }) {
                                     <Link to={`/oeuvre/${item.id}/chapitre/${c.num}`} className="chapter__link">
                                         <span className="chapter__num">Chapitre {formatNum(c.num)}</span>
                                         {c.title && <span className="chapter__title">{c.title}</span>}
-                                        <span className="chapter__meta">{c.pages} pages</span>
+                                        <span className="chapter__meta" title={c.addedAt ? `Importé le ${new Date(c.addedAt).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}` : undefined}>
+                                            {c.pages} pages{c.addedAt ? `, importé le ${new Date(c.addedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+                                        </span>
                                         {(c.variants || []).map((v) => (
                                             <span key={v} className="chapter__variant">
                                                 {KINDS[v]?.short}

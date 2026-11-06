@@ -69,6 +69,8 @@ export const api = {
 
     adminStatus: (token) => request('GET', 'admin', { token }),
     adminReimport: (token) => request('POST', 'admin', { body: { action: 'reimport' }, token }),
+    adminCleanupPreview: (token) => request('GET', 'admin?cleanup=1', { token }),
+    adminCleanup: (token) => request('POST', 'admin', { body: { action: 'cleanup' }, token }),
 };
 
 // Adresse de la photo d'un profil, ou null s'il n'en a pas (on affiche alors ses initiales).
