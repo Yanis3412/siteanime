@@ -9,7 +9,8 @@ import { load, save } from '../lib/storage.js';
 import { formatNum } from '../lib/importer.js';
 import { progressAfterReading } from '../lib/items.js';
 
-const DEFAULTS = { mode: 'paged', direction: 'rtl', fit: 'height' };
+const DEFAULTS = { mode: 'paged', direction: 'rtl', fit: 'height', variant: 'fr' };
+const VARIANT_LABELS = { vo: 'VO', fr: 'VF', color: 'Couleur', 'fr-color': 'VF couleur' };
 
 export function ReaderPage() {
     const { id, num } = useParams();
@@ -39,15 +40,29 @@ export function ReaderPage() {
             return next;
         });
 
+    // Version préférée (VF, couleur…) : le site renvoie la plus proche qui existe, sinon la VO.
+    const variantRef = useRef(settings.variant);
+    variantRef.current = settings.variant;
+
     // Chargement du chapitre (liens de lecture valables quelques heures).
     const fetchChapter = useCallback(
         () =>
-            api.chapters.get(profileId, id, num, token).then((d) => {
+            api.chapters.get(profileId, id, num, token, variantRef.current).then((d) => {
                 setData(d);
                 return d;
             }),
         [profileId, id, num, token],
     );
+
+    // Changement de version en gardant la page en cours.
+    const switchVariant = async (variant) => {
+        changeSettings({ variant });
+        try {
+            setData(await api.chapters.get(profileId, id, num, token, variant));
+        } catch {
+            /* on reste sur la version affichée */
+        }
+    };
 
     useEffect(() => {
         setData(null);
@@ -189,6 +204,15 @@ export function ReaderPage() {
                     {data?.chapter.title && <span className="reader__subtitle">{data.chapter.title}</span>}
                 </div>
                 <div className="reader__tools">
+                    {data?.chapter.variants?.length > 0 && (
+                        <div className="segmented reader__variants" role="radiogroup" aria-label="Version du chapitre">
+                            {['vo', ...data.chapter.variants].map((v) => (
+                                <button key={v} role="radio" aria-checked={data.variant === v} className={`segmented__opt ${data.variant === v ? 'is-active' : ''}`} onClick={() => switchVariant(v)}>
+                                    {VARIANT_LABELS[v]}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <button className="reader__icon" onClick={() => setSettingsOpen((o) => !o)} aria-label="Réglages de lecture" aria-expanded={settingsOpen}>
                         <Settings2 size={19} />
                     </button>

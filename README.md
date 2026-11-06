@@ -1,7 +1,7 @@
 # Liste — mangas et animes
 
 Site de suivi de mangas et d'animes entre potes : chaque profil a sa liste, protégée par un code.
-Les infos (couvertures, nombre de chapitres/épisodes, saisons, sorties) viennent de MyAnimeList via l'API Jikan.
+Les infos (couvertures, nombre de chapitres/épisodes, saisons, sorties) viennent d'AniList, avec MyAnimeList en secours.
 
 ## Fonctionnalités
 
@@ -30,9 +30,11 @@ api/                  Fonctions serverless Vercel
   session.js          Connexion / déconnexion
   library.js          Lecture et enregistrement d'une liste
   chapters.js         Chapitres importés : liste, envoi, lecture, suppression
+  jobs.js             File de traduction / colorisation traitée par le traducteur
   admin.js            Réimport des données de l'ancienne version (admin)
   _lib/               Stockage, sécurité, modèle de données (non exposé)
 scripts/dev-seed.mjs  Fausses données pour tester en local
+traducteur/           Programme Windows qui traduit et colorise les chapitres (voir son README)
 ```
 
 ## Données et sécurité
@@ -98,6 +100,19 @@ Le site refuse les imports au-delà de 9,5 Go au total, pour rester dans l'offre
    | `R2_MAX_BYTES` | Optionnel : limite totale en octets (9,5 Go par défaut) |
 
 6. Redéployer. Tant que ces variables manquent, la section Chapitres l'indique simplement.
+
+## Traduction et colorisation
+
+Sur la page d'un manga, le bouton **Traduire** (ou le menu de chaque chapitre) demande une version
+traduite en français, colorisée, ou les deux. Les demandes passent par une file d'attente (`api/jobs.js`)
+traitée par le programme du dossier [`traducteur/`](traducteur/README.md), à lancer sur un PC Windows
+avec une carte NVIDIA (manga-image-translator + DeepL). Les pages produites sont rangées dans R2 à côté
+de l'original, et la liseuse propose VO / VF / Couleur.
+
+## Fiches des œuvres
+
+Les infos (titres, couvertures, chapitres, saisons, prochains épisodes) viennent d'**AniList**,
+avec **Jikan (MyAnimeList)** en secours si AniList ne répond pas (`src/lib/meta.js`).
 
 ## Mise en ligne de la refonte
 

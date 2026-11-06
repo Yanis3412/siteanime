@@ -1,0 +1,7 @@
+venv/
+mit/
+work/
+fonts/
+config.json
+traducteur.log
+__pycache__/

@@ -50,13 +50,19 @@ export const api = {
 
     chapters: {
         list: (profileId, itemId, token) => request('GET', `chapters?${qs({ profileId, itemId })}`, { token }),
-        get: (profileId, itemId, num, token) => request('GET', `chapters?${qs({ profileId, itemId, num })}`, { token }),
+        get: (profileId, itemId, num, token, variant = 'vo') => request('GET', `chapters?${qs({ profileId, itemId, num, variant })}`, { token }),
         prepare: (payload, token) => request('POST', 'chapters', { body: { action: 'prepare', ...payload }, token }),
         commit: (uploadId, token) => request('POST', 'chapters', { body: { action: 'commit', uploadId }, token }),
         abort: (uploadId, token) => request('POST', 'chapters', { body: { action: 'abort', uploadId }, token }),
         update: (payload, token) => request('PATCH', 'chapters', { body: payload, token }),
         remove: (profileId, itemId, num, token) => request('DELETE', `chapters?${qs({ profileId, itemId, num })}`, { token }),
         removeAll: (profileId, itemId, token) => request('DELETE', `chapters?${qs({ profileId, itemId, all: 1 })}`, { token }),
+    },
+
+    jobs: {
+        list: (profileId, itemId, token) => request('GET', `jobs?${qs({ profileId, itemId })}`, { token }),
+        request: (payload, token) => request('POST', 'jobs', { body: { action: 'request', ...payload }, token }),
+        cancel: (jobId, token) => request('POST', 'jobs', { body: { action: 'cancel', jobId }, token }),
     },
 
     adminStatus: (token) => request('GET', 'admin', { token }),
