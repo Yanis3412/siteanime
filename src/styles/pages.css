@@ -563,10 +563,6 @@
 .profile-tile--new .profile-tile__name {
     color: var(--text-muted);
 }
-.profiles__manage {
-    margin-top: var(--s6);
-    color: var(--text-muted);
-}
 .profiles__error {
     display: grid;
     justify-items: center;

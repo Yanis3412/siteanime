@@ -1,6 +1,6 @@
 // Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { CalendarX, Download, ImagePlus, KeyRound, LogOut, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
+import { CalendarX, Download, ImagePlus, KeyRound, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
@@ -12,7 +12,6 @@ import { ManageProfilesDialog } from './ManageProfiles.jsx';
 import { buildExport, downloadJson, parseImport } from '../lib/transfer.js';
 import { formatBytes } from '../lib/importer.js';
 import { api, avatarUrl } from '../lib/api.js';
-import { load } from '../lib/storage.js';
 
 export function ProfileMenu() {
     const app = useApp();
@@ -55,7 +54,7 @@ export function ProfileMenu() {
     };
 
     const reimport = async () => {
-        const token = load('adminToken');
+        const token = app.session.token;
         try {
             const status = await api.adminStatus(token);
             const ok = await confirm({
@@ -75,7 +74,7 @@ export function ProfileMenu() {
 
     // Supprime les chapitres importés il y a plus de 2 mois, sur tous les profils.
     const cleanup = async () => {
-        const token = load('adminToken');
+        const token = app.session.token;
         try {
             const preview = await api.adminCleanupPreview(token);
             const date = new Date(preview.cutoff).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -148,6 +147,7 @@ export function ProfileMenu() {
                             </div>
                         ),
                     },
+                    // Ferme la session : le code sera redemandé pour revenir sur ce profil.
                     { label: 'Changer de profil', icon: Users, onSelect: app.leave },
                     'separator',
                     !readOnly && { label: 'Changer la photo', icon: ImagePlus, onSelect: () => setDialog('photo') },
@@ -161,8 +161,6 @@ export function ProfileMenu() {
                     hasAdminAccess && { label: 'Supprimer les chapitres de plus de 2 mois', icon: CalendarX, onSelect: cleanup },
                     hasAdminAccess && { label: 'Réimporter l’ancienne version', icon: RotateCcw, onSelect: reimport },
                     !readOnly && !profile.isAdmin && { label: 'Supprimer le profil', icon: Trash2, danger: true, onSelect: removeProfile },
-                    !readOnly && 'separator',
-                    !readOnly && { label: 'Se déconnecter', icon: LogOut, onSelect: app.logout },
                 ]}
             />
             <RenameDialog open={dialog === 'rename'} onClose={() => setDialog(null)} />
