@@ -45,7 +45,7 @@ function r2Storage({ accountId, accessKeyId, secretAccessKey, bucket }) {
 
     return {
         configured: true,
-        signUpload: (key) => presign(key, 'PUT', UPLOAD_TTL),
+        signUpload: (key, ttl = UPLOAD_TTL) => presign(key, 'PUT', ttl),
         signRead: (key) => presign(key, 'GET', READ_TTL),
         async size(key) {
             const res = await client.fetch(objectUrl(key), { method: 'HEAD' });

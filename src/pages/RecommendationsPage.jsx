@@ -6,15 +6,15 @@ import { useUi } from '../state/ui.jsx';
 import { api } from '../lib/api.js';
 import { Cover } from '../components/ui/Cover.jsx';
 import { newItem, sameWork, unitLabel } from '../lib/items.js';
-import { fetchSeasons, getEntry, coverOf } from '../lib/jikan.js';
+import { fetchSeasons, findEntry, coverOf } from '../lib/meta.js';
 
-// Couverture d'une recommandation, récupérée sur MyAnimeList si le profil d'origine ne l'a pas.
+// Couverture d'une recommandation, récupérée sur sa fiche si le profil d'origine ne l'a pas.
 function RecoCover({ item }) {
     const [src, setSrc] = useState(item.imageUrl);
     useEffect(() => {
-        if (item.imageUrl || !item.malId) return;
+        if (item.imageUrl || !(item.malId || item.anilistId)) return;
         let alive = true;
-        getEntry(item.type, item.malId)
+        findEntry(item)
             .then((e) => alive && setSrc(coverOf(e)))
             .catch(() => {});
         return () => {
@@ -45,7 +45,7 @@ export function RecommendationsPage() {
             if (excluded.has(p.id)) continue;
             for (const it of p.items) {
                 if (mine.some((m) => sameWork(m, it))) continue;
-                const key = it.malId ? `${it.type}-${it.malId}` : `${it.type}-${it.title.toLowerCase()}`;
+                const key = it.malId ? `${it.type}-${it.malId}` : it.anilistId ? `${it.type}-al${it.anilistId}` : `${it.type}-${it.title.toLowerCase()}`;
                 if (!map.has(key)) map.set(key, { item: it, by: [] });
                 map.get(key).by.push(p.name);
             }
@@ -64,14 +64,14 @@ export function RecommendationsPage() {
         const created = newItem(rec.item);
         addItem(created);
         toast(`${created.title} ajouté à ta liste.`, { tone: 'success' });
-        if (!created.malId) return;
+        if (!created.malId && !created.anilistId) return;
         try {
             if (!created.imageUrl) {
-                const imageUrl = coverOf(await getEntry(created.type, created.malId));
+                const imageUrl = coverOf(await findEntry(created));
                 if (imageUrl) updateItem(created.id, { imageUrl }, { touch: false });
             }
             if (created.type === 'Anime') {
-                const seasons = await fetchSeasons(created.malId);
+                const seasons = await fetchSeasons(created);
                 if (seasons.length > 1) updateItem(created.id, (it) => ({ ...it, seasons, seasonProgress: seasons.map(() => 0) }), { touch: false });
             }
         } catch {
@@ -120,7 +120,7 @@ export function RecommendationsPage() {
             {recommendations.length > 0 && (
                 <ul className="recos">
                     {recommendations.map((rec) => (
-                        <li key={`${rec.item.type}-${rec.item.malId || rec.item.title}`} className="reco">
+                        <li key={`${rec.item.type}-${rec.item.malId || rec.item.anilistId || rec.item.title}`} className="reco">
                             <RecoCover item={rec.item} />
                             <div className="reco__text">
                                 <span className="reco__title">{rec.item.title}</span>

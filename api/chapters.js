@@ -2,7 +2,7 @@
 // (ou d'être l'administrateur) : les chapitres de chacun restent privés.
 //
 // GET    /api/chapters?profileId&itemId            → liste des chapitres + stockage utilisé
-// GET    /api/chapters?profileId&itemId&num        → un chapitre avec les liens de lecture de ses pages
+// GET    /api/chapters?profileId&itemId&num[&variant] → un chapitre avec les liens de lecture de ses pages
 // POST   /api/chapters { action: 'prepare', … }    → liens d'envoi pour les pages d'un chapitre
 // POST   /api/chapters { action: 'commit', uploadId }
 // POST   /api/chapters { action: 'abort', uploadId }
@@ -23,6 +23,10 @@ import {
     newPrefix,
     pageKey,
     chapterPageKeys,
+    allChapterKeys,
+    chapterBytes,
+    variantPageKeys,
+    VARIANTS,
     compactExts,
     publicChapter,
     loadChapters,
@@ -86,9 +90,13 @@ export default route({
         const index = chapters.findIndex((c) => c.num === num);
         if (index === -1) throw new HttpError(404, 'Chapitre introuvable');
         const chapter = chapters[index];
-        const pages = await Promise.all(chapterPageKeys(chapter).map((k) => blob.signRead(k)));
+        // ?variant=fr | color | fr-color : version traduite ou colorisée si elle existe.
+        const variant = VARIANTS.includes(req.query.variant) && chapter.variants?.[req.query.variant] ? req.query.variant : 'vo';
+        const keys = variant === 'vo' ? chapterPageKeys(chapter) : variantPageKeys(chapter, variant);
+        const pages = await Promise.all(keys.map((k) => blob.signRead(k)));
         send(res, 200, {
             chapter: publicChapter(chapter),
+            variant,
             pages,
             prev: chapters[index - 1]?.num ?? null,
             next: chapters[index + 1]?.num ?? null,
@@ -156,9 +164,9 @@ export default route({
             const chapters = await loadChapters(kv, pending.profileId, pending.itemId);
             const existing = chapters.find((c) => c.num === pending.num);
             if (existing) {
-                // Remplacement : on supprime l'ancienne version du chapitre.
-                await blob.removeMany(chapterPageKeys(existing));
-                await addUsage(kv, pending.profileId, -(existing.bytes || 0));
+                // Remplacement : on supprime l'ancienne version du chapitre et ses traductions.
+                await blob.removeMany(allChapterKeys(existing));
+                await addUsage(kv, pending.profileId, -chapterBytes(existing));
             }
             const chapter = {
                 num: pending.num,
@@ -214,9 +222,9 @@ export default route({
         const num = parseNum(req.query.num);
         const removed = all ? chapters : chapters.filter((c) => c.num === num);
         if (!removed.length) return send(res, 200, { removed: 0 });
-        if (blob.configured) await blob.removeMany(removed.flatMap(chapterPageKeys));
+        if (blob.configured) await blob.removeMany(removed.flatMap(allChapterKeys));
         await saveChapters(kv, profileId, itemId, all ? [] : chapters.filter((c) => c.num !== num));
-        await addUsage(kv, profileId, -removed.reduce((n, c) => n + (c.bytes || 0), 0));
+        await addUsage(kv, profileId, -removed.reduce((n, c) => n + chapterBytes(c), 0));
         send(res, 200, { removed: removed.length, usage: await usage(kv, profileId) });
     },
 });

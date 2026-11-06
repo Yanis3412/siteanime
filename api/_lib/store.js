@@ -61,6 +61,7 @@ export function sanitizeItem(raw) {
         current: num(raw.current) ?? 0,
         total: num(raw.total) || null,
         malId: num(raw.malId) || null,
+        anilistId: num(raw.anilistId) || null,
         status,
         fav: !!raw.fav,
         recommended: !!raw.recommended,
@@ -73,6 +74,7 @@ export function sanitizeItem(raw) {
     if (Array.isArray(raw.seasons) && raw.seasons.length) {
         item.seasons = raw.seasons.slice(0, 60).map((s, i) => ({
             malId: num(s?.malId) || null,
+            anilistId: num(s?.anilistId) || null,
             name: cleanString(s?.name, 200) || `Saison ${i + 1}`,
             episodes: num(s?.episodes) || null,
             aired: num(s?.aired) || 0,

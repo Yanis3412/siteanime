@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import { Dialog } from './ui/Dialog.jsx';
 import { Cover } from './ui/Cover.jsx';
 import { useApp } from '../state/app.jsx';
-import { findEntry, summarize, nextBroadcast, nextChapterEstimate } from '../lib/jikan.js';
+import { findEntries, nextBroadcast, nextChapterEstimate } from '../lib/meta.js';
 import { relativeDate, totalsKey, unitLabel } from '../lib/items.js';
 
 export function ReleasesSheet({ open, onClose }) {
@@ -21,38 +21,51 @@ export function ReleasesSheet({ open, onClose }) {
         const upcoming = [];
         const totals = {};
         setProgress({ done: 0, total: items.length });
+        let failed = false;
 
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
+        for (let start = 0; start < items.length; start += 50) {
+            const chunk = items.slice(start, start + 50);
+            let entries;
             try {
-                const entry = await findEntry(item, { fresh: true });
-                const info = summarize(entry, item.type);
-                if (info?.total) {
+                entries = await findEntries(chunk, { fresh: true });
+            } catch {
+                failed = true;
+                break;
+            }
+            for (let k = 0; k < chunk.length; k++) {
+                const item = chunk[k];
+                const entry = entries[k];
+                if (!entry) continue;
+                // Pour un anime en cours, on compte les épisodes déjà diffusés, pas le total prévu.
+                const released = entry.nextEpisode?.number ? entry.nextEpisode.number - 1 : entry.total;
+                if (released) {
                     const key = totalsKey(item);
                     const before = known[key] || item.total;
-                    if (before && info.total > before) {
-                        const diff = info.total - before;
+                    if (before && released > before) {
+                        const diff = released - before;
                         news.push({
                             item,
                             text:
                                 diff === 1
-                                    ? `${item.type === 'Anime' ? 'Épisode' : 'Chapitre'} ${info.total} disponible`
-                                    : `${diff} nouveaux ${unitLabel(item.type)}, jusqu’au ${info.total}`,
+                                    ? `${item.type === 'Anime' ? 'Épisode' : 'Chapitre'} ${released} disponible`
+                                    : `${diff} nouveaux ${unitLabel(item.type)}, jusqu’au ${released}`,
                         });
                     }
-                    totals[key] = info.total;
-                    if (!readOnly && !item.seasons?.length && info.total !== item.total && info.total >= (item.current || 0)) {
-                        updateItem(item.id, { total: info.total }, { touch: false });
-                    }
+                    totals[key] = released;
+                }
+                if (!readOnly && !item.seasons?.length && entry.total && entry.total !== item.total && entry.total >= (item.current || 0)) {
+                    updateItem(item.id, { total: entry.total }, { touch: false });
                 }
                 if (item.type === 'Anime') {
                     const date = nextBroadcast(entry);
-                    // MAL ne donne souvent pas le nombre d'épisodes d'un anime en cours de diffusion.
-                    if (date) upcoming.push({ item, label: info?.total ? `Épisode ${info.total + 1}` : 'Prochain épisode', date, detail: null });
+                    if (date) {
+                        const number = entry.nextEpisode?.number;
+                        upcoming.push({ item, label: number ? `Épisode ${number}` : 'Prochain épisode', date, detail: null });
+                    }
                 } else {
-                    const est = nextChapterEstimate(entry);
+                    const est = await nextChapterEstimate(entry);
                     if (est) {
-                        const next = Math.max(info?.total || 0, item.total || 0, item.current || 0) + 1;
+                        const next = Math.max(entry.total || 0, item.total || 0, item.current || 0) + 1;
                         upcoming.push({
                             item,
                             label: `Chapitre ${next}`,
@@ -61,13 +74,16 @@ export function ReleasesSheet({ open, onClose }) {
                         });
                     }
                 }
-            } catch {
-                /* titre ignoré si MyAnimeList ne répond pas */
             }
-            setProgress({ done: i + 1, total: items.length });
+            setProgress({ done: Math.min(start + 50, items.length), total: items.length });
         }
 
         if (!readOnly && Object.keys(totals).length) setKnownTotals(totals);
+        if (failed) {
+            setProgress(null);
+            setResult({ news, upcoming, checkedAt: new Date(), failed: true });
+            return;
+        }
         upcoming.sort((a, b) => a.date - b.date);
         setResult({ news, upcoming, checkedAt: new Date() });
         setProgress(null);
@@ -83,8 +99,10 @@ export function ReleasesSheet({ open, onClose }) {
                         {checking
                             ? `Vérification de ${progress.done} sur ${progress.total} titres en cours…`
                             : result
-                              ? `Dernière vérification à ${result.checkedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.`
-                              : 'Compare tes titres en cours avec MyAnimeList pour repérer les nouvelles sorties.'}
+                              ? result.failed
+                                ? 'Les fiches ne répondent pas pour le moment : vérification incomplète. Réessaie dans quelques minutes.'
+                                : `Dernière vérification à ${result.checkedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.`
+                              : 'Compare tes titres en cours avec leurs fiches pour repérer les nouvelles sorties.'}
                     </p>
                     <button className="btn btn--primary" onClick={run} disabled={checking}>
                         <RefreshCw size={16} className={checking ? 'spin' : ''} aria-hidden="true" />

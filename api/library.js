@@ -18,7 +18,7 @@ export default route({
                 name: p.name,
                 items: (libraries[i]?.items || [])
                     .filter((it) => it.recommended)
-                    .map(({ title, type, malId, imageUrl, total, status }) => ({ title, type, malId, imageUrl, total, status })),
+                    .map(({ title, type, malId, anilistId, imageUrl, total, status }) => ({ title, type, malId, anilistId, imageUrl, total, status })),
             }));
             return send(res, 200, { profiles: result });
         }

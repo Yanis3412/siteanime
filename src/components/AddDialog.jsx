@@ -1,11 +1,11 @@
-// Ajout d'une œuvre : recherche sur MyAnimeList, puis ajout avec la fiche choisie.
+// Ajout d'une œuvre : recherche des fiches (AniList, MyAnimeList en secours), puis ajout avec la fiche choisie.
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { Dialog } from './ui/Dialog.jsx';
 import { Cover } from './ui/Cover.jsx';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
-import { search, summarize, fetchSeasons, getEntry } from '../lib/jikan.js';
+import { search, summarize, fetchSeasons, findEntry } from '../lib/meta.js';
 import { newItem, sameWork, unitLabel } from '../lib/items.js';
 
 export function AddDialog({ open, onClose, defaultType }) {
@@ -40,7 +40,7 @@ function AddForm({ onClose, defaultType }) {
             try {
                 const list = await search(q, type, 8);
                 if (id !== requestRef.current) return;
-                setResults(list.map((e) => summarize(e, type)));
+                setResults(list.map(summarize));
                 setActive(0);
                 setState('done');
             } catch {
@@ -62,16 +62,19 @@ function AddForm({ onClose, defaultType }) {
 
         // Compléments en arrière-plan : saisons pour un anime, fiche complète sinon.
         try {
-            if (type === 'Anime' && candidate.malId) {
-                const seasons = await fetchSeasons(candidate.malId);
+            if (type === 'Anime' && (candidate.anilistId || candidate.malId)) {
+                const seasons = await fetchSeasons(candidate);
                 if (seasons.length > 1) {
                     updateItem(candidate.id, (it) => ({ ...it, seasons, seasonProgress: seasons.map(() => 0) }), { touch: false });
                 }
-            } else if (!candidate.malId) {
-                const [first] = await search(candidate.title, type, 1);
-                const full = first ? summarize(await getEntry(type, first.mal_id), type) : null;
+            } else if (!candidate.anilistId && !candidate.malId) {
+                const full = summarize(await findEntry(candidate));
                 if (full) {
-                    updateItem(candidate.id, (it) => ({ ...it, malId: full.malId, status: full.status, total: full.total, imageUrl: full.imageUrl }), { touch: false });
+                    updateItem(
+                        candidate.id,
+                        (it) => ({ ...it, malId: full.malId, anilistId: full.anilistId, status: full.status, total: full.total, imageUrl: full.imageUrl }),
+                        { touch: false },
+                    );
                 }
             }
         } catch {
@@ -127,9 +130,9 @@ function AddForm({ onClose, defaultType }) {
             </div>
 
             <div className="add__results" id="add-results" role="listbox" ref={listRef}>
-                {state === 'idle' && <p className="add__hint">Tape au moins deux lettres. Les fiches viennent de MyAnimeList.</p>}
+                {state === 'idle' && <p className="add__hint">Tape au moins deux lettres pour chercher un titre.</p>}
                 {state === 'loading' && !results.length && <p className="add__hint">Recherche…</p>}
-                {state === 'error' && <p className="add__hint">MyAnimeList ne répond pas. Tu peux quand même ajouter le titre tel quel.</p>}
+                {state === 'error' && <p className="add__hint">La recherche ne répond pas pour le moment. Tu peux quand même ajouter le titre tel quel.</p>}
                 {state === 'done' && !results.length && <p className="add__hint">Aucune fiche trouvée pour « {query.trim()} ».</p>}
                 {options.map((opt, i) =>
                     opt.manual ? (
@@ -152,7 +155,7 @@ function AddForm({ onClose, defaultType }) {
                         </button>
                     ) : (
                         <button
-                            key={opt.malId}
+                            key={opt.anilistId || opt.malId}
                             id={`add-opt-${i}`}
                             data-index={i}
                             role="option"
