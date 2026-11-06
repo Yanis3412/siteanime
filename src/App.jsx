@@ -8,6 +8,7 @@ import { ProfilesPage } from './pages/ProfilesPage.jsx';
 import { LibraryPage } from './pages/LibraryPage.jsx';
 import { ItemPage } from './pages/ItemPage.jsx';
 import { RecommendationsPage } from './pages/RecommendationsPage.jsx';
+import { ActivityPage } from './pages/ActivityPage.jsx';
 import { SitesPage } from './pages/SitesPage.jsx';
 import { ReaderPage } from './pages/ReaderPage.jsx';
 
@@ -61,6 +62,7 @@ export function App() {
                 <Route path="/animes" element={<LibraryPage view="Anime" />} />
                 <Route path="/watchlist" element={<LibraryPage view="watchlist" />} />
                 <Route path="/recommandations" element={<RecommendationsPage />} />
+                <Route path="/activite" element={<ActivityPage />} />
                 <Route path="/sites" element={<SitesPage />} />
                 <Route path="/oeuvre/:id" element={<ItemPage />} />
             </Route>

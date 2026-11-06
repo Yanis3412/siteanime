@@ -5,6 +5,7 @@ import { getKV } from './_lib/kv.js';
 import { route, send, body, cleanString, HttpError } from './_lib/http.js';
 import { keys, listProfiles, emptyLibrary, sanitizeItem, sanitizeTotals, MAX_ITEMS } from './_lib/store.js';
 import { requireWrite } from './_lib/auth.js';
+import { recordLibraryChanges } from './_lib/activity.js';
 
 export default route({
     async GET(req, res) {
@@ -59,6 +60,7 @@ export default route({
             lastKnownTotals: sanitizeTotals(lastKnownTotals ?? current.lastKnownTotals),
         };
         await kv.set(keys.library(id), next);
+        await recordLibraryChanges(kv, id, current.items, clean);
         if (profile.itemCount !== clean.length) {
             await kv.set(keys.profile(id), { ...profile, itemCount: clean.length });
         }

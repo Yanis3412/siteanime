@@ -4,6 +4,7 @@ import { getKV } from './_lib/kv.js';
 import { route, send, body, cleanString, HttpError } from './_lib/http.js';
 import { keys, listProfiles, publicProfile } from './_lib/store.js';
 import { hashPin, isValidNewPin, requireWrite, createSession, clearFails } from './_lib/auth.js';
+import { activityKey } from './_lib/activity.js';
 import { getBlob } from './_lib/blob.js';
 import { removeAllForProfile } from './_lib/chapters.js';
 
@@ -57,7 +58,7 @@ export default route({
         await requireWrite(kv, req, profile.id);
         if (profile.isAdmin) throw new HttpError(400, 'Le profil administrateur ne peut pas être supprimé');
         await removeAllForProfile(kv, getBlob(), profile.id);
-        await kv.del(keys.profile(profile.id), keys.library(profile.id), keys.fails(profile.id), keys.avatar(profile.id));
+        await kv.del(keys.profile(profile.id), keys.library(profile.id), keys.fails(profile.id), keys.avatar(profile.id), activityKey(profile.id));
         await kv.srem(keys.profileIds, profile.id);
         send(res, 200, { ok: true });
     },

@@ -67,6 +67,10 @@ export const api = {
         cancel: (jobId, token) => request('POST', 'jobs', { body: { action: 'cancel', jobId }, token }),
     },
 
+    activity: {
+        feed: (before) => request('GET', before ? `activity?${qs({ before })}` : 'activity'),
+        stats: () => request('GET', 'activity?stats=1'),
+    },
     getSites: () => request('GET', 'sites'),
     saveSites: (groups, token) => request('PUT', 'sites', { body: { groups }, token }),
     backups: {
