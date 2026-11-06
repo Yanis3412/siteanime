@@ -778,6 +778,84 @@
     color: var(--accent);
 }
 
+/* Modification des liens (administrateur) */
+.page__actions {
+    display: flex;
+    gap: var(--s2);
+}
+.sites-edit {
+    display: grid;
+    gap: var(--s6);
+    max-width: 860px;
+}
+.sites-edit__group {
+    display: grid;
+    gap: var(--s2);
+}
+.sites-edit__head {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+}
+.sites-edit__title {
+    flex: 1;
+    max-width: 360px;
+    margin-right: var(--s2);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+}
+.sites-edit__list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.sites-edit__row {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1.6fr) auto;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2) 0;
+    border-top: 1px solid var(--line);
+}
+.sites-edit__row:last-child {
+    border-bottom: 1px solid var(--line);
+}
+.sites-edit__tools {
+    display: flex;
+    gap: 2px;
+}
+.sites-edit__danger:hover:not(:disabled) {
+    color: var(--danger);
+}
+.sites-edit__add {
+    justify-self: start;
+    margin-left: -10px;
+}
+.sites-edit__add-group {
+    justify-self: start;
+}
+@media (max-width: 640px) {
+    .sites-edit__row {
+        grid-template-columns: 20px minmax(0, 1fr) auto;
+        grid-template-areas:
+            'icon name tools'
+            '. url url';
+    }
+    .sites-edit__row .site__icon {
+        grid-area: icon;
+    }
+    .sites-edit__name {
+        grid-area: name;
+    }
+    .sites-edit__url {
+        grid-area: url;
+    }
+    .sites-edit__tools {
+        grid-area: tools;
+    }
+}
+
 /* ---------- Chapitres d'un manga ---------- */
 .chapters {
     display: grid;
