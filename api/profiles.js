@@ -4,19 +4,19 @@ import crypto from 'node:crypto';
 import { getKV } from './_lib/kv.js';
 import { route, send, body, cleanString, HttpError } from './_lib/http.js';
 import { keys, listProfiles, publicProfile, emptyLibrary, ensureMigrated } from './_lib/store.js';
-import { hashPin, isValidNewPin, createSession } from './_lib/auth.js';
+import { hashPin, verifyPin, isValidNewPin, createSession } from './_lib/auth.js';
 
 export default route({
     async GET(req, res) {
         const kv = getKV();
-        await ensureMigrated(kv, hashPin);
+        await ensureMigrated(kv, hashPin, verifyPin);
         const profiles = await listProfiles(kv);
         send(res, 200, { profiles: profiles.map(publicProfile) });
     },
 
     async POST(req, res) {
         const kv = getKV();
-        await ensureMigrated(kv, hashPin);
+        await ensureMigrated(kv, hashPin, verifyPin);
         const { name, pin } = body(req);
         const cleanName = cleanString(name, 40);
         if (!cleanName) throw new HttpError(400, 'Le nom du profil est obligatoire');
