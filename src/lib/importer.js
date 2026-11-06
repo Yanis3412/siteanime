@@ -17,6 +17,9 @@ const baseName = (p) => p.split('/').pop();
 export function detectNumber(name) {
     const base = name
         .replace(/\.[a-z0-9]{2,4}$/i, '')
+        // Captures GoFullPage : « screencapture-site-com-…-2026-11-06-21_20_41 » : on retire la date et l'heure.
+        .replace(/^screencapture[-_ ]/i, '')
+        .replace(/[-_ ](?:19|20)\d{2}-\d{2}-\d{2}(?:[-_ ]\d{2}[-_]\d{2}(?:[-_]\d{2})?)?$/, '')
         .replace(/\[[^\]]*\]|\([^)]*\)/g, ' ')
         .replace(/_/g, ' ');
     const explicit = base.match(/(?:^|[^a-z])(?:chap(?:itre|ter)?|ch|c)\.?\s*[#-]?\s*(\d+(?:[.,]\d+)?)/i);

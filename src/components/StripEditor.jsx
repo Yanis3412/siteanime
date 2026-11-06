@@ -9,16 +9,17 @@ import { loadStrip, renderPages } from '../lib/strip.js';
 const SNAP_PX = 14; // distance (à l'écran) à laquelle une coupure est attirée vers une marge
 const MIN_GAP = 24; // écart minimal entre deux coupures, en pixels de la capture
 
-export function StripEditor({ row, onClose, onDone }) {
+// chapter (import rapide) : { value, onChange, existing } pour vérifier le numéro au même endroit.
+export function StripEditor({ row, onClose, onDone, chapter = null }) {
     const [busy, setBusy] = useState(false);
     return (
         <Dialog open={!!row} onClose={busy ? () => {} : onClose} title="Découper en planches" description={row?.label} size="lg" className="strip-dialog">
-            {row && <Editor key={row.id} row={row} onClose={onClose} onDone={onDone} setBusy={setBusy} />}
+            {row && <Editor key={row.id} row={row} onClose={onClose} onDone={onDone} setBusy={setBusy} chapter={chapter} />}
         </Dialog>
     );
 }
 
-function Editor({ row, onClose, onDone, setBusy }) {
+function Editor({ row, onClose, onDone, setBusy, chapter }) {
     const [strip, setStrip] = useState(null);
     const [error, setError] = useState('');
     const [step, setStep] = useState('Lecture de la capture…');
@@ -68,6 +69,9 @@ function Editor({ row, onClose, onDone, setBusy }) {
     const sorted = useMemo(() => [...cuts].filter((c) => c > start && c < end).sort((a, b) => a - b), [cuts, start, end]);
     const bounds = [start, ...sorted, end];
     const pageCount = bounds.length - 1;
+    const chapterNum = chapter ? Number(String(chapter.value).trim().replace(',', '.')) : null;
+    const chapterOk = !chapter || (String(chapter.value).trim() !== '' && Number.isFinite(chapterNum) && chapterNum >= 0);
+    const replaces = chapter && chapterOk && chapter.existing?.has(chapterNum);
 
     const yFromEvent = useCallback(
         (e) => {
@@ -188,6 +192,20 @@ function Editor({ row, onClose, onDone, setBusy }) {
     return (
         <div className="strip">
             <aside className="strip__side">
+                {chapter && (
+                    <label className="field strip__chapter">
+                        <span className="field__label">Chapitre</span>
+                        <input
+                            className={`input ${chapterOk ? '' : 'is-invalid'}`}
+                            inputMode="decimal"
+                            value={chapter.value}
+                            placeholder="Numéro"
+                            onChange={(e) => chapter.onChange(e.target.value)}
+                            disabled={rendering}
+                        />
+                        <span className="field__hint">{!chapterOk ? 'Indique le numéro du chapitre.' : replaces ? 'Remplacera le chapitre déjà importé.' : 'Trouvé dans le nom du fichier : vérifie-le.'}</span>
+                    </label>
+                )}
                 <p className="strip__count">
                     <strong>{pageCount}</strong> {pageCount > 1 ? 'planches' : 'planche'}
                 </p>
@@ -204,8 +222,8 @@ function Editor({ row, onClose, onDone, setBusy }) {
                     <button type="button" className="btn btn--secondary" onClick={onClose} disabled={rendering}>
                         Annuler
                     </button>
-                    <button type="button" className="btn btn--primary" onClick={finish} disabled={rendering}>
-                        {rendering ? step : `Découper en ${pageCount} ${pageCount > 1 ? 'planches' : 'planche'}`}
+                    <button type="button" className="btn btn--primary" onClick={finish} disabled={rendering || !chapterOk}>
+                        {rendering ? step : chapter ? 'Découper et importer' : `Découper en ${pageCount} ${pageCount > 1 ? 'planches' : 'planche'}`}
                     </button>
                 </div>
             </aside>

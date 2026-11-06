@@ -1,29 +1,59 @@
 // Fenêtre d'import de chapitres : sélection des fichiers, vérification des numéros, envoi.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FolderOpen, Scissors, Upload } from 'lucide-react';
 import { Dialog } from './ui/Dialog.jsx';
 import { StripEditor } from './StripEditor.jsx';
 import { extractPages, filesFromDrop, filesFromInput, formatBytes, formatNum, groupIntoChapters, uploadChapter } from '../lib/importer.js';
 import { hasTallImages, isCapturePdf } from '../lib/strip.js';
 
-export function ImportDialog({ open, onClose, item, profileId, token, existing, onImported }) {
+// initialEntries : fichiers déposés directement sur la page du manga (import rapide).
+export function ImportDialog({ open, onClose, item, profileId, token, existing, onImported, initialEntries = null }) {
     // Pendant l'envoi, la fenêtre ne se ferme pas par erreur (Échap, clic à côté).
     const [busy, setBusy] = useState(false);
     return (
         <Dialog open={open} onClose={busy ? () => {} : onClose} title="Importer des chapitres" description={item.title} size="md">
-            <ImportForm onClose={onClose} setBusy={setBusy} item={item} profileId={profileId} token={token} existing={existing} onImported={onImported} />
+            <ImportForm
+                onClose={onClose}
+                setBusy={setBusy}
+                item={item}
+                profileId={profileId}
+                token={token}
+                existing={existing}
+                onImported={onImported}
+                initialEntries={initialEntries}
+            />
         </Dialog>
     );
 }
 
-function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImported }) {
+function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImported, initialEntries }) {
     const [rows, setRows] = useState([]);
     const [unsupported, setUnsupported] = useState([]);
     const [phase, setPhase] = useState('pick'); // pick | review | uploading | done
     const [dragging, setDragging] = useState(false);
     const [splitting, setSplitting] = useState(null); // ligne en cours de découpage
+    const [quick, setQuick] = useState(false); // une capture déposée sur la page : découpage puis import direct
     const fileInput = useRef(null);
     const folderInput = useRef(null);
+    const autoRunRef = useRef(false);
+
+    // Fichiers déposés sur la page : s'il n'y a qu'une capture, on ouvre tout de suite le découpage.
+    const initialDoneRef = useRef(false);
+    useEffect(() => {
+        if (!initialEntries?.length || initialDoneRef.current) return;
+        initialDoneRef.current = true;
+        const chapters = addEntries(initialEntries);
+        if (chapters.length === 1 && (chapters[0].kind === 'pdf' || chapters[0].kind === 'images')) {
+            const row = chapters[0];
+            const check = row.kind === 'pdf' ? isCapturePdf(row.files[0]) : hasTallImages(row.files);
+            check.then((capture) => {
+                if (!capture) return;
+                setQuick(true);
+                setSplitting({ ...row, numText: row.num === null ? '' : formatNum(row.num) });
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialEntries]);
 
     const addEntries = (entries) => {
         const { chapters, unsupported: bad } = groupIntoChapters(entries);
@@ -39,6 +69,7 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
             const check = c.kind === 'pdf' ? isCapturePdf(c.files[0]) : c.kind === 'images' ? hasTallImages(c.files) : Promise.resolve(false);
             check.then((capture) => capture && update(c.id, { capture: true }));
         }
+        return chapters;
     };
 
     const update = (id, changes) => setRows((r) => r.map((row) => (row.id === id ? { ...row, ...changes } : row)));
@@ -75,6 +106,14 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
         setBusy(false);
         setPhase('done');
     };
+
+    // Import rapide : une fois la capture découpée et le numéro vérifié, on lance l'envoi.
+    useEffect(() => {
+        if (!autoRunRef.current || !canImport || phase !== 'review') return;
+        autoRunRef.current = false;
+        run();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows, canImport, phase]);
 
     const failed = rows.filter((r) => r.state === 'error').length;
     const imported = rows.filter((r) => r.state === 'done').length;
@@ -227,10 +266,24 @@ function ImportForm({ onClose, setBusy, item, profileId, token, existing, onImpo
 
             <StripEditor
                 row={splitting}
-                onClose={() => setSplitting(null)}
+                chapter={
+                    quick && splitting
+                        ? {
+                              value: rows.find((r) => r.id === splitting.id)?.numText ?? splitting.numText,
+                              onChange: (numText) => update(splitting.id, { numText }),
+                              existing,
+                          }
+                        : null
+                }
+                onClose={() => {
+                    setSplitting(null);
+                    setQuick(false);
+                }}
                 onDone={({ pages, split }) => {
                     update(splitting.id, { splitPages: pages, split, size: pages.reduce((n, p) => n + p.size, 0) });
+                    if (quick) autoRunRef.current = true;
                     setSplitting(null);
+                    setQuick(false);
                 }}
             />
         </div>
