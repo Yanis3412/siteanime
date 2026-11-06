@@ -1,6 +1,6 @@
 // Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { CalendarX, DatabaseBackup, Download, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
+import { CalendarX, DatabaseBackup, Download, Smartphone, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
@@ -10,6 +10,8 @@ import { PinField } from './PinField.jsx';
 import { PhotoField } from './PhotoField.jsx';
 import { ManageProfilesDialog } from './ManageProfiles.jsx';
 import { BackupsDialog } from './Backups.jsx';
+import { InstallDialog } from './InstallApp.jsx';
+import { canPromptInstall, isStandalone, promptInstall } from '../lib/pwa.js';
 import { buildExport, downloadJson, parseImport } from '../lib/transfer.js';
 import { formatBytes } from '../lib/importer.js';
 import { api, avatarUrl } from '../lib/api.js';
@@ -18,7 +20,7 @@ export function ProfileMenu() {
     const app = useApp();
     const { profile, readOnly, library, hasAdminAccess } = app;
     const { toast, confirm, theme, toggleTheme } = useUi();
-    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'photo' | 'manage' | 'backups'
+    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'photo' | 'manage' | 'backups' | 'install'
 
     if (!profile) return null;
 
@@ -52,6 +54,14 @@ export function ProfileMenu() {
             }
         };
         input.click();
+    };
+
+    // Installer le site comme une appli : directement si le navigateur le permet (Android, ordinateur),
+    // sinon explications (iPhone).
+    const install = async () => {
+        if (canPromptInstall()) {
+            if (await promptInstall()) toast('Appli installée : retrouve-la sur ton écran d’accueil.', { tone: 'success' });
+        } else setDialog('install');
     };
 
     // Supprime les chapitres importés il y a plus de 2 mois, sur tous les profils.
@@ -138,6 +148,7 @@ export function ProfileMenu() {
                     { label: 'Exporter la liste', icon: Download, onSelect: exportList },
                     !readOnly && { label: 'Importer une liste', icon: Upload, onSelect: importList },
                     { label: theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre', icon: theme === 'dark' ? Sun : Moon, onSelect: toggleTheme },
+                    !isStandalone() && { label: 'Installer l’appli', icon: Smartphone, onSelect: install },
                     hasAdminAccess && 'separator',
                     hasAdminAccess && { label: 'Gérer les profils', icon: UserCog, onSelect: () => setDialog('manage') },
                     hasAdminAccess && { label: 'Sauvegardes', icon: DatabaseBackup, onSelect: () => setDialog('backups') },
@@ -157,6 +168,7 @@ export function ProfileMenu() {
             </Dialog>
             <ManageProfilesDialog open={dialog === 'manage'} onClose={() => setDialog(null)} />
             <BackupsDialog open={dialog === 'backups'} onClose={() => setDialog(null)} />
+            <InstallDialog open={dialog === 'install'} onClose={() => setDialog(null)} />
         </>
     );
 }

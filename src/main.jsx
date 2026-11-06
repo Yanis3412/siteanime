@@ -10,6 +10,9 @@ import './styles/reader.css';
 import { UiProvider } from './state/ui.jsx';
 import { AppProvider } from './state/app.jsx';
 import { App } from './App.jsx';
+import { registerServiceWorker } from './lib/pwa.js';
+
+registerServiceWorker();
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>

@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { useUi } from './state/ui.jsx';
+import { watchForUpdates } from './lib/pwa.js';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useApp } from './state/app.jsx';
 import { Shell } from './components/Shell.jsx';
@@ -25,6 +28,18 @@ function Home() {
 
 export function App() {
     const { booting } = useApp();
+    const { toast } = useUi();
+    // Nouvelle version mise en ligne pendant que le site (ou l'appli) était ouvert.
+    useEffect(
+        () =>
+            watchForUpdates(() =>
+                toast('Une nouvelle version du site est disponible.', {
+                    duration: 0,
+                    action: { label: 'Mettre à jour', onClick: () => window.location.reload() },
+                }),
+            ),
+        [toast],
+    );
     if (booting) {
         return (
             <div className="boot" aria-busy="true">
