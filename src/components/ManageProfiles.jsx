@@ -1,5 +1,5 @@
 // « Gérer les profils » : réservé à l'administrateur. Pour chaque profil : photo, nom, nouveau code, suppression.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
@@ -7,12 +7,25 @@ import { Dialog } from './ui/Dialog.jsx';
 import { Avatar } from './ui/Avatar.jsx';
 import { PinField } from './PinField.jsx';
 import { PhotoField } from './PhotoField.jsx';
-import { avatarUrl } from '../lib/api.js';
+import { api, avatarUrl } from '../lib/api.js';
+import { formatBytes } from '../lib/importer.js';
 
 export function ManageProfilesDialog({ open, onClose }) {
-    const { profiles } = useApp();
+    const { profiles, hasAdminAccess, session } = useApp();
     const [selectedId, setSelectedId] = useState(null);
+    const [storage, setStorage] = useState(null); // espace utilisé, par profil
     const selected = profiles?.find((p) => p.id === selectedId) || null;
+
+    // Recalculé à chaque ouverture et après une suppression.
+    const loadStorage = () =>
+        api.adminStorage(session.token)
+            .then(setStorage)
+            .catch(() => setStorage(null));
+    useEffect(() => {
+        if (open && hasAdminAccess) loadStorage();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, hasAdminAccess]);
+    const usageOf = (id) => storage?.profiles.find((p) => p.id === id) || null;
 
     const close = () => {
         setSelectedId(null);
@@ -30,9 +43,22 @@ export function ManageProfilesDialog({ open, onClose }) {
         >
             <AdminGate>
                 {selected ? (
-                    <ProfileEditor key={selected.id} profile={selected} onBack={() => setSelectedId(null)} />
+                    <ProfileEditor
+                        key={selected.id}
+                        profile={selected}
+                        usage={usageOf(selected.id)}
+                        limitBytes={storage?.limitBytes}
+                        onBack={() => setSelectedId(null)}
+                        onDeleted={() => {
+                            setSelectedId(null);
+                            loadStorage();
+                        }}
+                    />
                 ) : (
-                    <ProfileList profiles={profiles || []} onPick={setSelectedId} />
+                    <>
+                        {storage && <StorageSummary storage={storage} />}
+                        <ProfileList profiles={profiles || []} usageOf={usageOf} onPick={setSelectedId} />
+                    </>
                 )}
             </AdminGate>
         </Dialog>
@@ -46,7 +72,30 @@ function AdminGate({ children }) {
     return children;
 }
 
-function ProfileList({ profiles, onPick }) {
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+
+function shareOf(bytes, limit) {
+    const pct = (bytes / limit) * 100;
+    const text = pct < 1 ? 'moins de 1 %' : `${Math.round(pct)} %`;
+    return `Soit ${text} des ${formatBytes(limit)} partagés entre tous les profils.`;
+}
+
+function StorageSummary({ storage }) {
+    const chapters = storage.profiles.reduce((n, p) => n + p.chapters, 0);
+    return (
+        <div className="storage manage-storage">
+            <div className="storage__text">
+                <span>
+                    Stockage : {formatBytes(storage.totalBytes)} utilisés sur {formatBytes(storage.limitBytes)}
+                </span>
+                <span className="muted">{plural(chapters, 'chapitre', 'chapitres')}</span>
+            </div>
+            <div className="meter meter--thin" style={{ '--p': `${Math.min(100, (storage.totalBytes / storage.limitBytes) * 100)}%` }} />
+        </div>
+    );
+}
+
+function ProfileList({ profiles, usageOf, onPick }) {
     return (
         <ul className="manage-list">
             {profiles.map((p) => (
@@ -59,8 +108,11 @@ function ProfileList({ profiles, onPick }) {
                                 {p.isAdmin && <ShieldCheck size={14} aria-label="Administrateur" className="profile-tile__admin" />}
                             </span>
                             <span className="manage-row__meta">
-                                {p.itemCount} {p.itemCount > 1 ? 'titres' : 'titre'}
+                                {plural(p.itemCount, 'titre', 'titres')}
+                                {usageOf(p.id) && `, ${plural(usageOf(p.id).chapters, 'chapitre', 'chapitres')}`}
                             </span>
+                        </span>
+                        <span className="manage-row__size">{usageOf(p.id)?.bytes ? formatBytes(usageOf(p.id).bytes) : ''}
                         </span>
                         <ChevronRight size={16} aria-hidden="true" />
                     </button>
@@ -70,7 +122,7 @@ function ProfileList({ profiles, onPick }) {
     );
 }
 
-function ProfileEditor({ profile, onBack }) {
+function ProfileEditor({ profile, usage, limitBytes, onBack, onDeleted }) {
     const { renameProfile, changePin, deleteProfile } = useApp();
     const { toast, confirm } = useUi();
 
@@ -116,7 +168,7 @@ function ProfileEditor({ profile, onBack }) {
     const remove = async () => {
         const ok = await confirm({
             title: `Supprimer le profil ${profile.name} ?`,
-            message: `Sa liste (${profile.itemCount} titres), ses chapitres importés et sa photo seront effacés définitivement.`,
+            message: `Sa liste (${profile.itemCount} titres), ses chapitres importés${usage?.bytes ? ` (${formatBytes(usage.bytes)})` : ''} et sa photo seront effacés définitivement.`,
             confirmLabel: 'Supprimer le profil',
             danger: true,
         });
@@ -125,7 +177,7 @@ function ProfileEditor({ profile, onBack }) {
         try {
             await deleteProfile(profile.id, { asAdmin: true });
             toast(`Profil ${profile.name} supprimé.`, { tone: 'success' });
-            onBack();
+            onDeleted();
         } catch (err) {
             toast(err.message, { tone: 'error' });
             setBusy(null);
@@ -143,6 +195,29 @@ function ProfileEditor({ profile, onBack }) {
 
             <section className="manage-section" aria-label="Photo">
                 <PhotoField profile={profile} asAdmin />
+            </section>
+
+            <section className="manage-section">
+                <h3 className="manage-section__title">Stockage</h3>
+                {!usage ? (
+                    <p className="manage-section__text">Calcul en cours…</p>
+                ) : usage.chapters === 0 ? (
+                    <p className="manage-section__text">Aucun chapitre importé.</p>
+                ) : (
+                    <>
+                        <p className="manage-section__text manage-usage">
+                            <strong>{formatBytes(usage.bytes)}</strong> pour {plural(usage.chapters, 'chapitre', 'chapitres')} sur {plural(usage.titles, 'titre', 'titres')}
+                            {usage.colored > 0 && `, dont ${usage.colored} en couleur`}.
+                            {usage.colorBytes > 0 && (
+                                <>
+                                    <br />
+                                    Pages originales : {formatBytes(usage.originalBytes)}. Versions couleur : {formatBytes(usage.colorBytes)}.
+                                </>
+                            )}
+                        </p>
+                        {limitBytes && <p className="manage-section__text">{shareOf(usage.bytes, limitBytes)}</p>}
+                    </>
+                )}
             </section>
 
             <section className="manage-section">

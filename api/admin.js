@@ -1,4 +1,5 @@
 // Réservé à l'administrateur.
+// GET  /api/admin?storage=1             → espace utilisé par chaque profil (chapitres, versions couleur)
 // GET  /api/admin?cleanup=1             → aperçu du nettoyage : chapitres importés il y a plus de 2 mois
 // POST /api/admin { action: 'cleanup' }  → supprime, pour tous les profils, les chapitres importés il y a
 //                                         plus de 2 mois (pages, versions couleur). Travaille par tranches :
@@ -7,7 +8,7 @@ import { getKV } from './_lib/kv.js';
 import { route, send, body, HttpError } from './_lib/http.js';
 import { listProfiles } from './_lib/store.js';
 import { requireAdmin } from './_lib/auth.js';
-import { getBlob } from './_lib/blob.js';
+import { getBlob, storageLimit } from './_lib/blob.js';
 import { allChapterKeys, chapterBytes, chapterKeys, loadChapters, saveChapters } from './_lib/chapters.js';
 
 export const CLEANUP_MONTHS = 2;
@@ -29,6 +30,31 @@ async function* chapterLists(kv) {
             yield { profile, itemId, chapters: await loadChapters(kv, profile.id, itemId) };
         }
     }
+}
+
+async function storageReport(kv) {
+    const profiles = await listProfiles(kv);
+    const report = await Promise.all(
+        profiles.map(async (profile) => {
+            const itemIds = await kv.smembers(chapterKeys.items(profile.id));
+            const lists = await Promise.all(itemIds.map((itemId) => loadChapters(kv, profile.id, itemId)));
+            const row = { id: profile.id, titles: 0, chapters: 0, colored: 0, originalBytes: 0, colorBytes: 0, bytes: 0 };
+            for (const list of lists) {
+                if (list.length) row.titles++;
+                for (const c of list) {
+                    const total = chapterBytes(c);
+                    row.chapters++;
+                    row.originalBytes += c.bytes || 0;
+                    row.colorBytes += total - (c.bytes || 0);
+                    if (c.variants && Object.keys(c.variants).length) row.colored++;
+                    row.bytes += total;
+                }
+            }
+            return row;
+        }),
+    );
+    const totalBytes = Number(await kv.get(chapterKeys.usageTotal)) || 0;
+    return { limitBytes: storageLimit(), totalBytes, profiles: report };
 }
 
 async function cleanupPreview(kv) {
@@ -72,6 +98,7 @@ export default route({
     async GET(req, res) {
         const kv = getKV();
         await requireAdmin(kv, req);
+        if (req.query?.storage) return send(res, 200, await storageReport(kv));
         if (!req.query?.cleanup) throw new HttpError(400, 'Action inconnue');
         send(res, 200, await cleanupPreview(kv));
     },
