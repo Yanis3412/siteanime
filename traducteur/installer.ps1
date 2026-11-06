@@ -1,4 +1,4 @@
-﻿# Installe le traducteur du site Liste sur ce PC Windows.
+﻿# Installe le coloriseur du site Liste sur ce PC Windows.
 # Avec une carte NVIDIA, il utilise la carte (CUDA) ; sinon (AMD, Intel…), il utilise le processeur.
 # Peut être relancé sans risque : les étapes déjà faites sont sautées, et ça met à jour le traducteur.
 
@@ -126,28 +126,16 @@ Step 'Vérification de PyTorch'
 $check = & $vpy -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else '')"
 if ($LASTEXITCODE -ne 0) { Fail "PyTorch ne démarre pas. Envoie une capture de cette fenêtre." }
 if ($check[0] -eq 'True') { Info "Carte utilisée : $($check[1])" }
-elseif ($useCuda) { Warn "PyTorch ne voit pas la carte NVIDIA : le traducteur utilisera le processeur. Mets à jour le pilote NVIDIA." }
+elseif ($useCuda) { Warn "PyTorch ne voit pas la carte NVIDIA : le coloriseur utilisera le processeur. Mets à jour le pilote NVIDIA." }
 else { Info 'Mode processeur prêt.' }
 
-# ---------- 7. Police ----------
-Step 'Police pour le texte en français'
-New-Item -ItemType Directory -Force -Path 'fonts' | Out-Null
-if (-not (Test-Path 'fonts\ComicNeue-Bold.ttf')) {
-    try {
-        Invoke-WebRequest 'https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-Bold.ttf' -OutFile 'fonts\ComicNeue-Bold.ttf' -UseBasicParsing
-        Info 'Police Comic Neue installée'
-    } catch {
-        Warn 'Police non téléchargée : le traducteur utilisera sa police par défaut.'
-    }
-} else { Info 'Police déjà présente' }
-
-# ---------- 8. Configuration ----------
+# ---------- 7. Configuration ----------
 Step 'Configuration'
 if (-not (Test-Path 'config.json')) {
     & $vpy worker.py --setup
     if ($LASTEXITCODE -ne 0) { Fail 'Configuration interrompue. Relance installer.bat.' }
 } else {
-    Info 'Déjà configuré (pour changer la clé DeepL ou le code : configurer.bat)'
+    Info 'Déjà configuré (pour se reconnecter après un changement de code : configurer.bat)'
 }
 
-Write-Host "`nInstallation terminée. Lance le traducteur avec lancer.bat." -ForegroundColor Green
+Write-Host "`nInstallation terminée. Lance le coloriseur avec lancer.bat." -ForegroundColor Green

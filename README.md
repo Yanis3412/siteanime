@@ -30,11 +30,11 @@ api/                  Fonctions serverless Vercel
   session.js          Connexion / déconnexion
   library.js          Lecture et enregistrement d'une liste
   chapters.js         Chapitres importés : liste, envoi, lecture, suppression
-  jobs.js             File de traduction / colorisation traitée par le traducteur
+  jobs.js             File de colorisation traitée par le programme du PC
   admin.js            Réimport des données de l'ancienne version (admin)
   _lib/               Stockage, sécurité, modèle de données (non exposé)
 scripts/dev-seed.mjs  Fausses données pour tester en local
-traducteur/           Programme Windows qui traduit et colorise les chapitres (voir son README)
+traducteur/           Programme Windows qui colorise les chapitres (voir son README)
 ```
 
 ## Données et sécurité
@@ -101,13 +101,14 @@ Le site refuse les imports au-delà de 9,5 Go au total, pour rester dans l'offre
 
 6. Redéployer. Tant que ces variables manquent, la section Chapitres l'indique simplement.
 
-## Traduction et colorisation
+## Colorisation
 
-Sur la page d'un manga, le bouton **Traduire** (ou le menu de chaque chapitre) demande une version
-traduite en français, colorisée, ou les deux. Les demandes passent par une file d'attente (`api/jobs.js`)
-traitée par le programme du dossier [`traducteur/`](traducteur/README.md), à lancer sur un PC Windows
-(manga-image-translator + DeepL ; carte NVIDIA si présente, sinon processeur). Les pages produites sont rangées dans R2 à côté
-de l'original, et la liseuse propose VO / VF / Couleur.
+Sur la page d'un manga, **Coloriser les non lus** (ou **Coloriser** dans le menu d'un chapitre) demande
+une version en couleur. Les demandes passent par une file d'attente (`api/jobs.js`) traitée par le
+programme du dossier [`traducteur/`](traducteur/README.md), à lancer sur un PC Windows
+(manga-image-translator ; carte NVIDIA si présente, sinon processeur). Les pages produites sont rangées
+dans R2 à côté de l'original, et la liseuse propose VO / Couleur. La traduction DeepL existe dans le code
+mais est désactivée (voir le README du dossier `traducteur/`).
 
 ## Fiches des œuvres
 

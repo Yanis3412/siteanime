@@ -1,7 +1,7 @@
-// Bibliothèque de chapitres d'un manga : liste, reprise de lecture, import, traduction, stockage utilisé.
+// Bibliothèque de chapitres d'un manga : liste, reprise de lecture, import, colorisation, stockage utilisé.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownUp, BookOpen, Check, ChevronDown, CircleDot, Languages, MoreHorizontal, Palette, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDownUp, BookOpen, Check, CircleDot, Languages, MoreHorizontal, Palette, Trash2, Upload, X } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { api } from '../lib/api.js';
@@ -12,12 +12,14 @@ import { isChapterRead, missingRanges } from '../lib/items.js';
 
 const PAGE = 40;
 
-// Versions qu'on peut demander au traducteur.
+// Versions que le programme du PC sait produire (les libellés servent aussi aux anciennes versions).
 export const KINDS = {
     fr: { short: 'VF', job: 'Traduction', action: 'Traduire en français', redo: 'Refaire la traduction', icon: Languages },
     color: { short: 'Couleur', job: 'Colorisation', action: 'Coloriser', redo: 'Refaire la colorisation', icon: Palette },
     'fr-color': { short: 'VF couleur', job: 'Traduction et couleur', action: 'Traduire et coloriser', redo: 'Refaire la traduction en couleur', icon: Palette },
 };
+// Seule la colorisation est proposée (la traduction est désactivée, voir api/jobs.js).
+const OFFERED = ['color'];
 
 export function ChaptersSection({ item }) {
     const { session, writeTokenFor } = useApp();
@@ -81,7 +83,7 @@ export function ChaptersSection({ item }) {
             const count = res.jobs.length;
             toast(
                 count
-                    ? `${count} chapitre${count > 1 ? 's' : ''} en attente de ${KINDS[kind].job.toLowerCase()}.${res.worker?.online ? '' : ' Le traducteur est éteint : ce sera fait dès qu’il sera lancé.'}`
+                    ? `${count} chapitre${count > 1 ? 's' : ''} en attente de ${KINDS[kind].job.toLowerCase()}.${res.worker?.online ? '' : ' Le coloriseur est éteint : ce sera fait dès qu’il sera lancé sur le PC.'}`
                     : 'Ces chapitres sont déjà en attente.',
                 { tone: 'success', duration: 6000 },
             );
@@ -173,6 +175,7 @@ export function ChaptersSection({ item }) {
     }
 
     const usage = data.usage;
+    const toColor = chapters.filter((c) => !isChapterRead(c, item) && !c.variants?.includes('color') && !jobFor(c.num).some((j) => j.kind === 'color' && j.status !== 'error'));
     const first = chapters.length ? Math.min(...chapters.map((c) => c.num)) : null;
     const last = chapters.length ? Math.max(...chapters.map((c) => c.num)) : null;
 
@@ -184,25 +187,15 @@ export function ChaptersSection({ item }) {
                 </h2>
                 <div className="chapters__actions">
                     {chapters.length > 0 && (
-                        <Menu
-                            label="Traduire ou coloriser des chapitres"
-                            trigger={(props) => (
-                                <button className="btn btn--secondary" {...props}>
-                                    <Languages size={16} aria-hidden="true" />
-                                    Traduire
-                                    <ChevronDown size={15} aria-hidden="true" />
-                                </button>
-                            )}
-                            items={Object.entries(KINDS).map(([kind, k]) => {
-                                const todo = chapters.filter((c) => !isChapterRead(c, item) && !c.variants?.includes(kind) && !jobFor(c.num).some((j) => j.kind === kind && j.status !== 'error'));
-                                return {
-                                    label: `${k.action} les non lus${todo.length ? ` (${todo.length})` : ''}`,
-                                    icon: k.icon,
-                                    disabled: !todo.length,
-                                    onSelect: () => requestKind(kind, todo.map((c) => c.num)),
-                                };
-                            })}
-                        />
+                        <button
+                            className="btn btn--secondary"
+                            disabled={!toColor.length}
+                            title={toColor.length ? undefined : 'Tous les chapitres non lus sont déjà en couleur ou en attente.'}
+                            onClick={() => requestKind('color', toColor.map((c) => c.num))}
+                        >
+                            <Palette size={16} aria-hidden="true" />
+                            Coloriser les non lus{toColor.length ? ` (${toColor.length})` : ''}
+                        </button>
                     )}
                     {resume && (
                         <Link to={`/oeuvre/${item.id}/chapitre/${resume.num}`} className="btn btn--primary">
@@ -238,8 +231,8 @@ export function ChaptersSection({ item }) {
                         <p className={`chapters__worker ${worker?.online ? 'is-online' : ''}`}>
                             <span className="chapters__dot" aria-hidden="true" />
                             {worker?.online
-                                ? 'Traducteur en ligne. Les demandes sont traitées une par une.'
-                                : 'Traducteur éteint. Les demandes seront traitées dès qu’il sera lancé sur le PC.'}
+                                ? 'Coloriseur en ligne. Les chapitres sont traités un par un.'
+                                : 'Coloriseur éteint. Les demandes seront traitées dès que lancer.bat tournera sur le PC.'}
                         </p>
                     )}
                     <ul className="chapters__list">
@@ -289,7 +282,8 @@ export function ChaptersSection({ item }) {
                                                 ? { label: 'Marquer comme non lu', icon: CircleDot, onSelect: () => setRead(c, false) }
                                                 : { label: 'Marquer comme lu', icon: Check, onSelect: () => setRead(c, true) },
                                             'separator',
-                                            ...Object.entries(KINDS).map(([kind, k]) => {
+                                            ...OFFERED.map((kind) => {
+                                                const k = KINDS[kind];
                                                 const pending = jobFor(c.num).find((j) => j.kind === kind && j.status !== 'error');
                                                 return {
                                                     label: pending ? `${k.job} déjà demandée` : c.variants?.includes(kind) ? k.redo : k.action,

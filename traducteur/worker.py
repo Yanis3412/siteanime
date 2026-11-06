@@ -1,12 +1,15 @@
-"""Traducteur du site Liste.
+"""Coloriseur du site Liste.
 
 Tourne sur un PC Windows : avec la carte graphique si c'est une NVIDIA, sinon avec le processeur
-(plus lent, mais ça marche partout). Il récupère les demandes faites sur le site
-(traduire en français, coloriser, ou les deux), traite les pages avec manga-image-translator,
-puis renvoie les pages traitées au site. Laisse la fenêtre ouverte pour qu'il travaille.
+(plus lent, mais ça marche partout). Il récupère les demandes de colorisation faites sur le site,
+traite les pages avec manga-image-translator, puis renvoie les pages en couleur au site.
+Laisse la fenêtre ouverte pour qu'il travaille.
 
-    python worker.py           lance le traducteur
-    python worker.py --setup   refait la configuration (site, clé DeepL, connexion admin)
+La traduction (DeepL) est désactivée : elle ne marche que si une clé DeepL a été ajoutée
+à config.json ("deepl_key") et que le site la propose à nouveau.
+
+    python worker.py           lance le coloriseur
+    python worker.py --setup   refait la configuration (adresse du site, connexion admin)
 """
 
 import argparse
@@ -103,16 +106,6 @@ def save_config(config):
     CONFIG_FILE.write_text(json.dumps(config, indent=2), encoding="utf-8")
 
 
-def check_deepl(key):
-    host = "api-free.deepl.com" if key.endswith(":fx") else "api.deepl.com"
-    res = requests.get(f"https://{host}/v2/usage", headers={"Authorization": f"DeepL-Auth-Key {key}"}, timeout=20)
-    if res.status_code == 403:
-        raise ValueError("clé refusée par DeepL")
-    res.raise_for_status()
-    usage = res.json()
-    return usage.get("character_count", 0), usage.get("character_limit", 0)
-
-
 def login(site):
     profiles = site.call("GET", "profiles", auth=False)["profiles"]
     admin = next((p for p in profiles if p.get("isAdmin")), None)
@@ -125,28 +118,13 @@ def login(site):
             return data["token"]
         except (AuthError, RuntimeError) as err:
             print(f"  {err}")
-    raise SystemExit("Trop d'essais. Relance le traducteur plus tard.")
+    raise SystemExit("Trop d'essais. Relance le coloriseur plus tard.")
 
 
 def setup(config):
-    print("\n=== Configuration du traducteur ===\n")
-    url = input(f"Adresse du site [{config.get('site', DEFAULT_SITE)}] : ").strip() or config.get("site", DEFAULT_SITE)
+    print("\n=== Configuration du coloriseur ===\n")
+    url = input(f"Adresse du site (Entrée pour {config.get('site', DEFAULT_SITE)}) : ").strip() or config.get("site", DEFAULT_SITE)
     config["site"] = url.rstrip("/")
-
-    while True:
-        current = config.get("deepl_key")
-        prompt = "Clé DeepL (Entrée pour garder l'actuelle) : " if current else "Clé DeepL (elle ne s'affiche pas) : "
-        key = getpass.getpass(prompt).strip() or current
-        if not key:
-            print("  La clé est obligatoire pour traduire. Crée-la sur https://www.deepl.com/fr/your-account/keys")
-            continue
-        try:
-            used, limit = check_deepl(key)
-            print(f"  Clé DeepL valide : {used:,} caractères utilisés sur {limit:,} ce mois-ci.".replace(",", " "))
-            config["deepl_key"] = key
-            break
-        except Exception as err:  # noqa: BLE001
-            print(f"  Clé DeepL invalide ({err}). Réessaie.")
 
     site = Site(config["site"])
     config["token"] = login(site)
@@ -255,6 +233,9 @@ def _process(site, config, job):
         download(url, in_dir / f"{stem}.{extension_of(url)}")
         stems.append(stem)
 
+    if job["kind"] != "color" and not config.get("deepl_key"):
+        raise RuntimeError("La traduction est désactivée sur ce PC : seule la colorisation est disponible.")
+
     cfg_path = folder / "config.json"
     cfg_path.write_text(json.dumps(mit_config(job["kind"])), encoding="utf-8")
 
@@ -265,7 +246,9 @@ def _process(site, config, job):
         cmd += ["--font-path", str(FONT_FILE)]
     cmd += ["local", "-i", str(in_dir), "-o", str(out_dir), "-f", "png", "--overwrite", "--config-file", str(cfg_path)]
 
-    env = {**os.environ, "DEEPL_AUTH_KEY": config["deepl_key"], "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    if config.get("deepl_key"):
+        env["DEEPL_AUTH_KEY"] = config["deepl_key"]
     tail = deque(maxlen=60)
     stop = threading.Event()
 
@@ -314,7 +297,7 @@ def _process(site, config, job):
 # ---------- Boucle principale ----------
 
 def main():
-    parser = argparse.ArgumentParser(description="Traducteur du site Liste")
+    parser = argparse.ArgumentParser(description="Coloriseur du site Liste")
     parser.add_argument("--setup", action="store_true", help="refaire la configuration")
     args = parser.parse_args()
 
@@ -323,14 +306,14 @@ def main():
         return 1
 
     config = load_config()
-    if args.setup or not config.get("token") or not config.get("deepl_key"):
+    if args.setup or not config.get("token"):
         config = setup(config)
         if args.setup:
             return 0
 
     site = Site(config["site"], config["token"])
-    print("\n  Traducteur lancé. Laisse cette fenêtre ouverte ; Ctrl+C pour l'arrêter.")
-    print("  Le premier chapitre est plus long : les modèles (quelques Go) se téléchargent une seule fois.")
+    print("\n  Coloriseur lancé. Laisse cette fenêtre ouverte ; Ctrl+C pour l'arrêter.")
+    print("  Le premier chapitre est plus long : le modèle de colorisation se télécharge une seule fois.")
     if gpu_available():
         print("  Mode : carte graphique NVIDIA.\n")
     else:
@@ -365,7 +348,7 @@ def main():
                     site.jobs("release", jobId=current["id"])
                 except Exception:  # noqa: BLE001
                     pass
-            log("Traducteur arrêté.")
+            log("Coloriseur arrêté.")
             return 0
         except AuthError:
             log("La session a expiré (code changé ?). Reconnexion nécessaire.")

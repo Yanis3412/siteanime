@@ -92,6 +92,10 @@ function outputKeys(job) {
     return Array.from({ length: job.total || 0 }, (_, i) => pageKey(job.outPrefix, i, 'webp'));
 }
 
+// Versions qu'on peut demander. La traduction (fr, fr-color) est désactivée : il suffit de
+// les rajouter ici et dans OFFERED (src/components/ChaptersSection.jsx) pour la réactiver.
+const ENABLED_KINDS = ['color'];
+
 export default route({
     async GET(req, res) {
         const kv = getKV();
@@ -115,6 +119,7 @@ export default route({
             if (!profileId || !itemId) throw new HttpError(400, 'Profil ou œuvre manquant');
             await requireWrite(kv, req, profileId);
             if (!VARIANTS.includes(data.kind)) throw new HttpError(400, 'Type de demande inconnu');
+            if (!ENABLED_KINDS.includes(data.kind)) throw new HttpError(400, 'Seule la colorisation est disponible.');
             if (!getBlob().configured) throw new HttpError(503, 'Stockage des chapitres non configuré');
 
             const library = await kv.get(keys.library(profileId));
@@ -152,7 +157,7 @@ export default route({
         if (data.action === 'cancel') {
             const job = await loadJob(kv, data.jobId);
             await requireWrite(kv, req, job.profileId);
-            if (job.status === 'running') throw new HttpError(409, 'Le traducteur travaille déjà sur ce chapitre.');
+            if (job.status === 'running') throw new HttpError(409, 'Le coloriseur travaille déjà sur ce chapitre.');
             await deleteJob(kv, job);
             return send(res, 200, { ok: true });
         }
@@ -243,7 +248,7 @@ export default route({
                 sizes.push(...(await Promise.all(out.slice(i, i + 8).map((k) => blob.size(k)))));
             }
             const missing = sizes.filter((s) => s === null).length;
-            if (missing) throw new HttpError(400, `${missing} page(s) traduite(s) n’ont pas été reçues`);
+            if (missing) throw new HttpError(400, `${missing} page(s) traitée(s) n’ont pas été reçues`);
             const bytes = sizes.reduce((n, s) => n + s, 0);
 
             const chapters = await loadChapters(kv, job.profileId, job.itemId);
