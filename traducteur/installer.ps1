@@ -1,4 +1,5 @@
-﻿# Installe le traducteur du site Liste sur ce PC (Windows + carte graphique NVIDIA).
+﻿# Installe le traducteur du site Liste sur ce PC Windows.
+# Avec une carte NVIDIA, il utilise la carte (CUDA) ; sinon (AMD, Intel…), il utilise le processeur.
 # Peut être relancé sans risque : les étapes déjà faites sont sautées, et ça met à jour le traducteur.
 
 # Les erreurs des programmes lancés sont vérifiées une par une (code de sortie).
@@ -23,13 +24,18 @@ function Winget-Install($id, $extra = @()) {
 }
 
 # ---------- 1. Carte graphique ----------
-Step 'Carte graphique NVIDIA'
-$smi = Get-Command nvidia-smi -ErrorAction SilentlyContinue
-if (-not $smi) { Fail "Pilote NVIDIA introuvable. Installe le pilote de ta carte depuis https://www.nvidia.com/fr-fr/drivers/ puis relance." }
-$gpu = (& nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader) | Select-Object -First 1
-Info $gpu
-$driver = [double](($gpu -split ',')[1].Trim() -replace '^(\d+\.\d+).*', '$1')
-if ($driver -lt 560) { Warn "Ton pilote NVIDIA ($driver) est ancien : mets-le à jour (version 560 ou plus) pour que CUDA fonctionne." }
+Step 'Carte graphique'
+$cards = (Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }) -join ', '
+Info "Détectée : $cards"
+$useCuda = [bool](Get-Command nvidia-smi -ErrorAction SilentlyContinue)
+if ($useCuda) {
+    $gpu = (& nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader) | Select-Object -First 1
+    Info "NVIDIA : $gpu"
+    $driver = [double](($gpu -split ',')[1].Trim() -replace '^(\d+\.\d+).*', '$1')
+    if ($driver -lt 560) { Warn "Ton pilote NVIDIA ($driver) est ancien : mets-le à jour (version 560 ou plus) pour que CUDA fonctionne." }
+} else {
+    Info "Pas de carte NVIDIA : le traducteur utilisera le processeur. C'est plus lent (environ 1 minute par page), mais ça marche."
+}
 
 # ---------- 2. Outils ----------
 Step 'Outils nécessaires : Python 3.12, Git, outils de compilation C++'
@@ -91,17 +97,23 @@ $vpy = Join-Path $PSScriptRoot 'venv\Scripts\python.exe'
 & $vpy -m pip install --upgrade pip wheel setuptools
 if ($LASTEXITCODE -ne 0) { Fail 'Mise à jour de pip impossible.' }
 
-# ---------- 5. PyTorch avec CUDA ----------
-Step 'PyTorch pour carte NVIDIA (gros téléchargement, environ 3 Go)'
+# ---------- 5. PyTorch ----------
 $torch = (Select-String -Path 'mit\requirements.txt' -Pattern '^torch==(.+)$').Matches[0].Groups[1].Value
 $vision = (Select-String -Path 'mit\requirements.txt' -Pattern '^torchvision==(.+)$').Matches[0].Groups[1].Value
 $installed = $false
-foreach ($cuda in @('cu126', 'cu128', 'cu130')) {
-    Info "Essai avec CUDA $cuda (torch $torch)..."
-    & $vpy -m pip install "torch==$torch" "torchvision==$vision" --index-url "https://download.pytorch.org/whl/$cuda"
-    if ($LASTEXITCODE -eq 0) { $installed = $true; break }
+if ($useCuda) {
+    Step 'PyTorch pour carte NVIDIA (gros téléchargement, environ 3 Go)'
+    foreach ($cuda in @('cu126', 'cu128', 'cu130')) {
+        Info "Essai avec CUDA $cuda (torch $torch)..."
+        & $vpy -m pip install "torch==$torch" "torchvision==$vision" --index-url "https://download.pytorch.org/whl/$cuda"
+        if ($LASTEXITCODE -eq 0) { $installed = $true; break }
+    }
 }
-if (-not $installed) { Fail "PyTorch avec CUDA n'a pas pu être installé." }
+if (-not $installed) {
+    Step 'PyTorch pour processeur'
+    & $vpy -m pip install "torch==$torch" "torchvision==$vision" --index-url 'https://download.pytorch.org/whl/cpu'
+    if ($LASTEXITCODE -ne 0) { Fail "PyTorch n'a pas pu être installé." }
+}
 
 # ---------- 6. Dépendances ----------
 Step 'Dépendances du traducteur (plusieurs minutes)'
@@ -110,10 +122,12 @@ if ($LASTEXITCODE -ne 0) { Fail "Installation des dépendances impossible (souve
 & $vpy -m pip install requests pillow
 if ($LASTEXITCODE -ne 0) { Fail 'Installation de requests/pillow impossible.' }
 
-Step 'Vérification de CUDA'
+Step 'Vérification de PyTorch'
 $check = & $vpy -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else '')"
-if ($check[0] -ne 'True') { Warn "PyTorch ne voit pas la carte NVIDIA : la traduction marchera mais très lentement. Mets à jour le pilote NVIDIA." }
-else { Info "Carte utilisée : $($check[1])" }
+if ($LASTEXITCODE -ne 0) { Fail "PyTorch ne démarre pas. Envoie une capture de cette fenêtre." }
+if ($check[0] -eq 'True') { Info "Carte utilisée : $($check[1])" }
+elseif ($useCuda) { Warn "PyTorch ne voit pas la carte NVIDIA : le traducteur utilisera le processeur. Mets à jour le pilote NVIDIA." }
+else { Info 'Mode processeur prêt.' }
 
 # ---------- 7. Police ----------
 Step 'Police pour le texte en français'

@@ -106,7 +106,7 @@ Le site refuse les imports au-delà de 9,5 Go au total, pour rester dans l'offre
 Sur la page d'un manga, le bouton **Traduire** (ou le menu de chaque chapitre) demande une version
 traduite en français, colorisée, ou les deux. Les demandes passent par une file d'attente (`api/jobs.js`)
 traitée par le programme du dossier [`traducteur/`](traducteur/README.md), à lancer sur un PC Windows
-avec une carte NVIDIA (manga-image-translator + DeepL). Les pages produites sont rangées dans R2 à côté
+(manga-image-translator + DeepL ; carte NVIDIA si présente, sinon processeur). Les pages produites sont rangées dans R2 à côté
 de l'original, et la liseuse propose VO / VF / Couleur.
 
 ## Fiches des œuvres

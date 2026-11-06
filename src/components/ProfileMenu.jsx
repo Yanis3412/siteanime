@@ -1,21 +1,23 @@
-// Menu du profil : changer de profil, renommer, code, export/import, thème, administration.
+// Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { Download, KeyRound, LogOut, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, Users } from 'lucide-react';
+import { Download, ImagePlus, KeyRound, LogOut, Moon, Pencil, RotateCcw, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
 import { Avatar } from './ui/Avatar.jsx';
 import { Dialog } from './ui/Dialog.jsx';
 import { PinField } from './PinField.jsx';
+import { PhotoField } from './PhotoField.jsx';
+import { ManageProfilesDialog } from './ManageProfiles.jsx';
 import { buildExport, downloadJson, parseImport } from '../lib/transfer.js';
-import { api } from '../lib/api.js';
+import { api, avatarUrl } from '../lib/api.js';
 import { load } from '../lib/storage.js';
 
 export function ProfileMenu() {
     const app = useApp();
     const { profile, readOnly, library, hasAdminAccess } = app;
     const { toast, confirm, theme, toggleTheme } = useUi();
-    const [dialog, setDialog] = useState(null); // 'rename' | 'pin'
+    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'photo' | 'manage'
 
     if (!profile) return null;
 
@@ -94,14 +96,14 @@ export function ProfileMenu() {
                 label={`Profil ${profile.name}`}
                 trigger={(props) => (
                     <button className="profile-trigger" {...props}>
-                        <Avatar name={profile.name} size="sm" />
+                        <Avatar name={profile.name} src={avatarUrl(profile)} size="sm" />
                     </button>
                 )}
                 items={[
                     {
                         header: (
                             <div className="menu__profile">
-                                <Avatar name={profile.name} />
+                                <Avatar name={profile.name} src={avatarUrl(profile)} />
                                 <div>
                                     <div className="menu__profile-name">{profile.name}</div>
                                     <div className="menu__profile-role">{role}</div>
@@ -111,12 +113,14 @@ export function ProfileMenu() {
                     },
                     { label: 'Changer de profil', icon: Users, onSelect: app.leave },
                     'separator',
+                    !readOnly && { label: 'Changer la photo', icon: ImagePlus, onSelect: () => setDialog('photo') },
                     !readOnly && { label: 'Renommer le profil', icon: Pencil, onSelect: () => setDialog('rename') },
                     !readOnly && { label: 'Changer le code', icon: KeyRound, onSelect: () => setDialog('pin') },
                     { label: 'Exporter la liste', icon: Download, onSelect: exportList },
                     !readOnly && { label: 'Importer une liste', icon: Upload, onSelect: importList },
                     { label: theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre', icon: theme === 'dark' ? Sun : Moon, onSelect: toggleTheme },
                     hasAdminAccess && 'separator',
+                    hasAdminAccess && { label: 'Gérer les profils', icon: UserCog, onSelect: () => setDialog('manage') },
                     hasAdminAccess && { label: 'Réimporter l’ancienne version', icon: RotateCcw, onSelect: reimport },
                     !readOnly && !profile.isAdmin && { label: 'Supprimer le profil', icon: Trash2, danger: true, onSelect: removeProfile },
                     !readOnly && 'separator',
@@ -125,6 +129,15 @@ export function ProfileMenu() {
             />
             <RenameDialog open={dialog === 'rename'} onClose={() => setDialog(null)} />
             <PinDialog open={dialog === 'pin'} onClose={() => setDialog(null)} />
+            <Dialog open={dialog === 'photo'} onClose={() => setDialog(null)} title="Photo du profil" size="sm">
+                <PhotoField profile={profile} />
+                <div className="form__actions">
+                    <button type="button" className="btn btn--secondary" onClick={() => setDialog(null)}>
+                        Fermer
+                    </button>
+                </div>
+            </Dialog>
+            <ManageProfilesDialog open={dialog === 'manage'} onClose={() => setDialog(null)} />
         </>
     );
 }

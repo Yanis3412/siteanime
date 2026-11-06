@@ -39,6 +39,8 @@ export const api = {
     createProfile: (name, pin) => request('POST', 'profiles', { body: { name, pin } }),
     updateProfile: (id, changes, token) => request('PATCH', `profile?id=${encodeURIComponent(id)}`, { body: changes, token }),
     deleteProfile: (id, token) => request('DELETE', `profile?id=${encodeURIComponent(id)}`, { token }),
+    setAvatar: (id, image, token) => request('PUT', `avatar?id=${encodeURIComponent(id)}`, { body: { image }, token }),
+    removeAvatar: (id, token) => request('DELETE', `avatar?id=${encodeURIComponent(id)}`, { token }),
 
     login: (profileId, pin) => request('POST', 'session', { body: { profileId, pin } }),
     checkSession: (token) => request('GET', 'session', { token }),
@@ -68,3 +70,9 @@ export const api = {
     adminStatus: (token) => request('GET', 'admin', { token }),
     adminReimport: (token) => request('POST', 'admin', { body: { action: 'reimport' }, token }),
 };
+
+// Adresse de la photo d'un profil, ou null s'il n'en a pas (on affiche alors ses initiales).
+export function avatarUrl(profile) {
+    if (!profile?.avatar) return null;
+    return `/api/avatar?${qs({ id: profile.id, v: profile.avatar })}`;
+}

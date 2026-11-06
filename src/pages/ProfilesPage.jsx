@@ -1,11 +1,14 @@
 // Écran d'accueil : choix du profil, déverrouillage par code, création d'un profil.
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Eye, Plus, ShieldCheck } from 'lucide-react';
+import { Eye, Plus, ShieldCheck, UserCog } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { Avatar } from '../components/ui/Avatar.jsx';
 import { Dialog } from '../components/ui/Dialog.jsx';
 import { PinField } from '../components/PinField.jsx';
+import { ManageProfilesDialog } from '../components/ManageProfiles.jsx';
+import { avatarUrl } from '../lib/api.js';
+import { load } from '../lib/storage.js';
 
 export function ProfilesPage() {
     const { profiles, profilesError, refreshProfiles, resume } = useApp();
@@ -14,6 +17,9 @@ export function ProfilesPage() {
     const [unlocking, setUnlocking] = useState(null);
     const [creating, setCreating] = useState(false);
     const [opening, setOpening] = useState(null);
+    const [managing, setManaging] = useState(false);
+    // L'administrateur s'est déjà connecté sur cet appareil.
+    const canManage = !!load('adminToken');
 
     const goIn = () => navigate(location.state?.from || '/mangas', { replace: true });
 
@@ -48,7 +54,7 @@ export function ProfilesPage() {
                         {profiles.map((p) => (
                             <li key={p.id}>
                                 <button className="profile-tile" onClick={() => pick(p)} disabled={opening === p.id}>
-                                    <Avatar name={p.name} size="lg" />
+                                    <Avatar name={p.name} src={avatarUrl(p)} size="lg" />
                                     <span className="profile-tile__name">
                                         {p.name}
                                         {p.isAdmin && <ShieldCheck size={15} aria-label="Administrateur" className="profile-tile__admin" />}
@@ -69,10 +75,18 @@ export function ProfilesPage() {
                         </li>
                     </ul>
                 )}
+
+                {profiles && canManage && (
+                    <button className="btn btn--ghost btn--sm profiles__manage" onClick={() => setManaging(true)}>
+                        <UserCog size={16} aria-hidden="true" />
+                        Gérer les profils
+                    </button>
+                )}
             </div>
 
             <UnlockDialog profile={unlocking} onClose={() => setUnlocking(null)} onDone={goIn} />
             <CreateDialog open={creating} onClose={() => setCreating(false)} onDone={goIn} />
+            <ManageProfilesDialog open={managing} onClose={() => setManaging(false)} />
         </div>
     );
 }

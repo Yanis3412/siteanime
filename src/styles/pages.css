@@ -563,6 +563,10 @@
 .profile-tile--new .profile-tile__name {
     color: var(--text-muted);
 }
+.profiles__manage {
+    margin-top: var(--s6);
+    color: var(--text-muted);
+}
 .profiles__error {
     display: grid;
     justify-items: center;
@@ -1058,4 +1062,104 @@
 }
 .chapter__job.is-error {
     color: var(--danger);
+}
+
+/* ---------- Gestion des profils (administrateur) ---------- */
+.manage-list {
+    display: grid;
+    gap: 2px;
+    margin: 0 calc(-1 * var(--s3));
+    padding: 0;
+    list-style: none;
+}
+.manage-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    width: 100%;
+    padding: var(--s2) var(--s3);
+    border-radius: var(--r-ctrl);
+    text-align: left;
+}
+.manage-row:hover,
+.manage-row:focus-visible {
+    background: var(--bg-hover);
+}
+.manage-row__main {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+.manage-row__name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    font-weight: 650;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.manage-row__meta {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.manage-row > svg:last-child {
+    flex: none;
+    color: var(--text-faint);
+}
+.manage-back {
+    margin: calc(-1 * var(--s2)) 0 var(--s2) calc(-1 * var(--s3));
+}
+.manage-section {
+    display: grid;
+    gap: var(--s3);
+    padding: var(--s4) 0;
+    border-top: 1px solid var(--line);
+}
+.manage-back + .manage-section {
+    padding-top: var(--s2);
+    border-top: 0;
+}
+.manage-section:last-child {
+    padding-bottom: 0;
+}
+.manage-section__title {
+    font-size: var(--fs-md);
+    font-weight: 650;
+}
+.manage-section__text {
+    max-width: 60ch;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.manage-section--danger .manage-section__title {
+    color: var(--danger);
+}
+.manage-inline {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s2);
+}
+.manage-inline .field {
+    flex: 1;
+    min-width: 0;
+}
+.manage-pin {
+    gap: var(--s3);
+}
+.manage-pin__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s3);
+}
+.manage-pin .form__actions {
+    margin-top: 0;
+}
+@media (max-width: 480px) {
+    .manage-pin__fields {
+        grid-template-columns: 1fr;
+    }
+    .photo-field {
+        align-items: flex-start;
+    }
 }
