@@ -124,6 +124,15 @@ mais est désactivée (voir le README du dossier `traducteur/`).
 Les infos (titres, couvertures, chapitres, saisons, prochains épisodes) viennent d'**AniList**,
 avec **Jikan (MyAnimeList)** en secours si AniList ne répond pas (`src/lib/meta.js`).
 
+## Appli sur téléphone
+
+Le site s'installe comme une appli (PWA) : `public/manifest.webmanifest`, icônes dans `public/icons/`,
+écrans de démarrage iPhone dans `public/splash/`, service worker `public/sw.js` (garde seulement la page de
+l'appli et les fichiers de code pour un démarrage rapide et un écran correct sans connexion ; l'API et les
+chapitres ne sont jamais mis en cache). Menu du profil → **Installer l'appli** : installation directe sur
+Android et ordinateur, explications pas à pas sur iPhone. Quand une nouvelle version est en ligne, l'appli
+propose de se mettre à jour (`src/lib/pwa.js`).
+
 ## Sauvegardes
 
 Chaque lundi vers 4 h, une tâche planifiée de Vercel (`vercel.json`, « crons ») appelle `/api/backup`, qui

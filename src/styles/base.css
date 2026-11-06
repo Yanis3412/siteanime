@@ -9,11 +9,14 @@
 html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    background: var(--bg);
 }
 
 body {
     margin: 0;
     min-height: 100vh;
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
@@ -110,5 +113,16 @@ ul {
         animation-iteration-count: 1 !important;
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* Ouvert comme une appli : pas de rebond qui laisse voir le fond, pas de surlignage au toucher. */
+@media (display-mode: standalone) {
+    html,
+    body {
+        overscroll-behavior-y: none;
+    }
+    body {
+        -webkit-tap-highlight-color: transparent;
     }
 }

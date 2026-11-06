@@ -14,15 +14,16 @@ export function UiProvider({ children }) {
 
     useEffect(() => {
         document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f3f4f6' : '#15171c');
         save('theme', theme);
     }, [theme]);
 
     const dismiss = useCallback((id) => setToasts((t) => t.filter((x) => x.id !== id)), []);
 
     const toast = useCallback(
-        (message, { tone = 'info', duration = 4000 } = {}) => {
+        (message, { tone = 'info', duration = 4000, action = null } = {}) => {
             const id = ++idRef.current;
-            setToasts((t) => [...t.slice(-3), { id, message, tone }]);
+            setToasts((t) => [...t.slice(-3), { id, message, tone, action }]);
             if (duration) setTimeout(() => dismiss(id), duration);
             return id;
         },
@@ -55,6 +56,17 @@ export function UiProvider({ children }) {
                         <div key={t.id} className={`toast toast--${t.tone}`}>
                             <Icon size={18} aria-hidden="true" />
                             <span>{t.message}</span>
+                            {t.action && (
+                                <button
+                                    className="toast__action"
+                                    onClick={() => {
+                                        dismiss(t.id);
+                                        t.action.onClick();
+                                    }}
+                                >
+                                    {t.action.label}
+                                </button>
+                            )}
                             <button className="toast__close" onClick={() => dismiss(t.id)} aria-label="Fermer">
                                 <X size={16} />
                             </button>

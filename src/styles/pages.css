@@ -274,7 +274,7 @@
 }
 .item__aside {
     position: sticky;
-    top: calc(var(--topbar-h) + var(--s5));
+    top: calc(var(--topbar-h) + var(--safe-top) + var(--s5));
     display: grid;
     gap: var(--s3);
 }
@@ -1255,7 +1255,7 @@
     width: 1000px;
 }
 .strip-dialog .dialog__panel {
-    height: calc(100dvh - 32px);
+    height: calc(100dvh - 32px - var(--safe-top) - var(--safe-bottom));
 }
 .strip-dialog .dialog__body {
     display: flex;

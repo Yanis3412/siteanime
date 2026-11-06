@@ -34,19 +34,21 @@
     display: flex;
     align-items: center;
     gap: var(--s3);
-    padding: 0 var(--s4);
+    padding: 0 calc(var(--s4) + var(--safe-right)) 0 calc(var(--s4) + var(--safe-left));
     background: var(--r-panel);
     backdrop-filter: blur(10px);
     transition: transform 200ms var(--ease), opacity 200ms var(--ease);
 }
 .reader__bar {
     top: 0;
-    height: 56px;
+    height: calc(56px + var(--safe-top));
+    padding-top: var(--safe-top);
     border-bottom: 1px solid var(--r-line);
 }
 .reader__foot {
     bottom: 0;
-    height: 60px;
+    height: calc(60px + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
     border-top: 1px solid var(--r-line);
 }
 .reader--paged:not(.show-ui) .reader__bar {
@@ -191,6 +193,7 @@
 /* Mode page par page */
 .paged {
     height: 100dvh;
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
     overflow: auto;
     display: flex;
     justify-content: center;
@@ -204,7 +207,7 @@
     background: #fff;
 }
 .paged--height .paged__img {
-    max-height: 100dvh;
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom));
     max-width: 100%;
     object-fit: contain;
 }
@@ -218,7 +221,7 @@
 .scrollview {
     display: grid;
     justify-items: center;
-    padding: 56px 0 72px;
+    padding: calc(56px + var(--safe-top)) 0 calc(72px + var(--safe-bottom));
 }
 .scrollview__img {
     display: block;
@@ -308,4 +311,11 @@
     .reader__variants .segmented__opt {
         padding: 0 8px;
     }
+}
+
+/* Pas de menu « Enregistrer l'image » à l'appui long pendant la lecture sur téléphone. */
+.reader img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }

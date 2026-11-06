@@ -2,6 +2,11 @@
    Thème sombre par défaut ; le thème clair redéfinit les couleurs. */
 
 :root {
+    /* Zones à éviter sur iPhone quand le site est ouvert comme une appli (encoche, barre d'accueil). */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
     /* Couleurs — thème sombre (graphite, papier, or) */
     --bg: #15171c;
     --bg-raised: #1c1f25;
