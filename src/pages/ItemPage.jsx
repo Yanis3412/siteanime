@@ -7,6 +7,7 @@ import { useItemActions } from '../hooks/useItemActions.js';
 import { Cover } from '../components/ui/Cover.jsx';
 import { Dialog } from '../components/ui/Dialog.jsx';
 import { ChaptersSection } from '../components/ChaptersSection.jsx';
+import { DislikeDialog } from '../components/DislikeDialog.jsx';
 import { findEntry, externalLink } from '../lib/meta.js';
 import {
     percentOf,
@@ -26,6 +27,7 @@ export function ItemPage() {
     const { library, readOnly } = useApp();
     const actions = useItemActions();
     const [editing, setEditing] = useState(false);
+    const [disliking, setDisliking] = useState(false);
     const item = library?.items.find((it) => it.id === id);
 
     if (!library) return <div className="page"><p className="muted">Chargement…</p></div>;
@@ -42,7 +44,11 @@ export function ItemPage() {
         );
     }
 
-    const back = item.fav ? { to: '/watchlist', label: 'Watchlist' } : item.type === 'Anime' ? { to: '/animes', label: 'Animes' } : { to: '/mangas', label: 'Mangas' };
+    const back = item.disliked
+        ? { to: '/pas-aimes', label: 'Pas aimés' }
+        : item.fav
+          ? { to: '/watchlist', label: 'Watchlist' }
+          : item.type === 'Anime' ? { to: '/animes', label: 'Animes' } : { to: '/mangas', label: 'Mangas' };
     const { current, total } = progressOf(item);
     const percent = percentOf(item);
     const status = statusOf(item);
@@ -155,7 +161,11 @@ export function ItemPage() {
                                 <ThumbsUp size={16} aria-hidden="true" />
                                 {item.recommended ? 'Recommandé' : 'Recommander'}
                             </button>
-                            <button className={`btn btn--secondary ${item.disliked ? 'is-on' : ''}`} onClick={() => actions.toggleDisliked(item)} aria-pressed={!!item.disliked}>
+                            <button
+                                className={`btn btn--secondary ${item.disliked ? 'is-on' : ''}`}
+                                onClick={() => (item.disliked ? actions.removeDisliked(item) : setDisliking(true))}
+                                aria-pressed={!!item.disliked}
+                            >
                                 <ThumbsDown size={16} aria-hidden="true" />
                                 Pas aimé
                             </button>
@@ -179,6 +189,19 @@ export function ItemPage() {
                         </div>
                     )}
 
+                    {item.disliked && (
+                        <section className="note dislike-reason">
+                            <h2 className="section-title">Pourquoi {readOnly ? 'ce titre n’a pas plu' : 'tu n’as pas aimé'}</h2>
+                            {item.dislikedReason ? <p className="note__text">{item.dislikedReason}</p> : <p className="muted">{readOnly ? 'Pas de raison donnée.' : 'Tu n’as pas encore expliqué pourquoi.'}</p>}
+                            {!readOnly && (
+                                <button className="btn btn--ghost btn--sm dislike-reason__edit" onClick={() => setDisliking(true)}>
+                                    <Pencil size={15} aria-hidden="true" />
+                                    {item.dislikedReason ? 'Modifier' : 'Expliquer pourquoi'}
+                                </button>
+                            )}
+                        </section>
+                    )}
+
                     {item.type === 'Manga' && !readOnly && <ChaptersSection item={item} />}
 
                     <NoteField item={item} readOnly={readOnly} />
@@ -187,6 +210,7 @@ export function ItemPage() {
             </div>
 
             <EditDialog item={item} open={editing} onClose={() => setEditing(false)} />
+            {disliking && <DislikeDialog item={item} open onClose={() => setDisliking(false)} />}
         </div>
     );
 }

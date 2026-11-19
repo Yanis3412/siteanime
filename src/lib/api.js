@@ -49,6 +49,7 @@ export const api = {
     getLibrary: (id) => request('GET', `library?id=${encodeURIComponent(id)}`),
     saveLibrary: (id, payload, token) => request('PUT', `library?id=${encodeURIComponent(id)}`, { body: payload, token }),
     getRecommendations: () => request('GET', 'library?recommended=1'),
+    getDisliked: () => request('GET', 'library?disliked=1'),
 
     chapters: {
         list: (profileId, itemId, token) => request('GET', `chapters?${qs({ profileId, itemId })}`, { token }),

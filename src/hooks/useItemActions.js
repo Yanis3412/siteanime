@@ -84,9 +84,10 @@ export function useItemActions() {
                 updateItem(item.id, item.recommended ? { recommended: false } : { recommended: true, disliked: false });
                 toast(item.recommended ? `Tu ne recommandes plus ${item.title}.` : `${item.title} est recommandé aux autres profils.`);
             },
-            toggleDisliked: (item) => {
-                updateItem(item.id, item.disliked ? { disliked: false } : { disliked: true, recommended: false, fav: false });
-                toast(item.disliked ? `${item.title} n’est plus dans « Pas aimés ».` : `${item.title} est rangé dans « Pas aimés ».`);
+            // Pour ranger un titre dans « Pas aimés », voir DislikeDialog (raison facultative).
+            removeDisliked: (item) => {
+                updateItem(item.id, { disliked: false });
+                toast(`${item.title} n’est plus dans « Pas aimés ».`);
             },
         }),
         [updateItem, refresh, remove, toast],

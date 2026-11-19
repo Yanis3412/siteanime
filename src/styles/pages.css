@@ -802,6 +802,81 @@
     color: var(--accent);
 }
 
+/* ---------- Pas aimés ---------- */
+.dislike {
+    align-items: flex-start;
+    padding: var(--s4) 0;
+}
+.dislike__title {
+    color: var(--text);
+    text-decoration: none;
+}
+.dislike__title:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.opinions {
+    display: grid;
+    gap: var(--s3);
+    margin-top: var(--s3);
+}
+.opinion {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--s3);
+    align-items: start;
+}
+.opinion__body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+.opinion__who {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+}
+.opinion__text {
+    max-width: 68ch;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+}
+.opinion__text--none {
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+}
+.opinion__edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    justify-self: start;
+    margin-top: 2px;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.dislike-form {
+    display: grid;
+    gap: var(--s3);
+}
+.dislike-form__input {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
+.dislike-reason {
+    display: grid;
+    justify-items: start;
+}
+.dislike-reason .section-title {
+    margin-bottom: var(--s2);
+}
+.dislike-reason .note__text {
+    color: var(--text);
+}
+.dislike-reason__edit {
+    margin: var(--s1) 0 0 -10px;
+}
+
 /* ---------- Sites ---------- */
 .sites {
     display: grid;
