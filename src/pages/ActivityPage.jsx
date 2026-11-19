@@ -6,20 +6,10 @@ import { useApp } from '../state/app.jsx';
 import { api, avatarUrl } from '../lib/api.js';
 import { Avatar } from '../components/ui/Avatar.jsx';
 import { formatNum } from '../lib/importer.js';
+import { EPISODE_MINUTES, watchTime } from '../lib/stats.js';
 
-const EPISODE_MINUTES = 23;
 const n = (v) => v.toLocaleString('fr-FR');
 const plural = (v, one, many) => `${n(v)} ${v > 1 ? many : one}`;
-
-// Temps passé devant les animes, à partir du nombre d'épisodes.
-function watchTime(episodes) {
-    const hours = Math.round((episodes * EPISODE_MINUTES) / 60);
-    if (hours < 1) return episodes ? 'moins d’1 h' : '0 h';
-    if (hours < 48) return `${hours} h`;
-    const days = Math.floor(hours / 24);
-    const rest = hours % 24;
-    return rest ? `${days} j ${rest} h` : `${days} j`;
-}
 
 // Phrase d'une ligne d'activité (sans le nom du profil).
 function describe(e) {
@@ -133,10 +123,10 @@ export function ActivityPage() {
                             {stats.map((p) => (
                                 <tr key={p.id} className={p.id === session.profileId ? 'is-me' : ''}>
                                     <th scope="row">
-                                        <span className="stats__who">
+                                        <Link to={`/profil/${p.id}`} className="stats__who">
                                             <Avatar name={p.name} src={avatarUrl(p)} size="sm" />
                                             {p.name}
-                                        </span>
+                                        </Link>
                                     </th>
                                     <td data-label="Épisodes vus">{n(p.episodes)}</td>
                                     <td data-label="Devant les animes">≈ {watchTime(p.episodes)}</td>
@@ -172,9 +162,14 @@ export function ActivityPage() {
                                 const title = e.title && (myItem(e) ? <Link to={`/oeuvre/${e.itemId}`}>{e.title}</Link> : <strong>{e.title}</strong>);
                                 return (
                                     <li key={e.id} className="feed__row">
-                                        <Avatar name={e.profile.name} src={avatarUrl(e.profile)} size="sm" />
+                                        <Link to={`/profil/${e.profile.id}`} className="feed__avatar" aria-hidden="true" tabIndex={-1}>
+                                            <Avatar name={e.profile.name} src={avatarUrl(e.profile)} size="sm" />
+                                        </Link>
                                         <p className="feed__text">
-                                            <strong>{e.profile.name}</strong> {before} {title} {after}
+                                            <Link to={`/profil/${e.profile.id}`} className="feed__who">
+                                                {e.profile.name}
+                                            </Link>{' '}
+                                            {before} {title} {after}
                                         </p>
                                         <time className="feed__time" dateTime={new Date(e.at).toISOString()}>
                                             {new Date(e.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}

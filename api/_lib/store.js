@@ -27,7 +27,16 @@ export function publicProfile(p) {
         createdAt: p.createdAt || 0,
         // Version de la photo (sert aussi à invalider le cache), null = initiales.
         avatar: p.avatarVersion || null,
+        // Personnalisation (page de profil) : bio, top 3, photo animée (GIF) et bannière cadrées.
+        bio: p.bio || '',
+        top: { anime: p.top?.anime || [], manga: p.top?.manga || [] },
+        anim: publicMedia(p.media?.anim),
+        banner: publicMedia(p.media?.banner),
     };
+}
+
+function publicMedia(m) {
+    return m ? { v: m.v, x: m.x, y: m.y, s: m.s, still: !!m.still } : null;
 }
 
 export async function listProfiles(kv) {

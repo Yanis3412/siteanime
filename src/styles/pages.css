@@ -1949,3 +1949,276 @@
 .activity > .page__head {
     margin-bottom: 0;
 }
+
+/* ---------- Liens vers les pages de profil ---------- */
+a.stats__who,
+.feed__who,
+a.opinion__who {
+    color: inherit;
+    text-decoration: none;
+}
+a.stats__who:hover,
+.feed__who:hover,
+a.opinion__who:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.feed__who {
+    font-weight: 700;
+}
+.feed__avatar {
+    display: flex;
+}
+
+/* ---------- Page de profil ---------- */
+.profile {
+    max-width: 1080px;
+}
+/* Sans bannière : un fond à la teinte du profil (la même que ses initiales). */
+.profile__banner {
+    aspect-ratio: 3 / 1;
+    overflow: hidden;
+    border-radius: var(--r-panel);
+    background: var(--bg-sunken);
+}
+.profile__banner.is-empty {
+    background:
+        radial-gradient(120% 140% at 0% 100%, hsl(var(--profile-hue, 40) 30% 24%) 0%, transparent 60%),
+        hsl(var(--profile-hue, 40) 14% 13%);
+}
+:root[data-theme='light'] .profile__banner.is-empty {
+    background:
+        radial-gradient(120% 140% at 0% 100%, hsl(var(--profile-hue, 40) 40% 80%) 0%, transparent 60%),
+        hsl(var(--profile-hue, 40) 25% 92%);
+}
+/* La photo chevauche la bannière ; le nom et la bio commencent juste en dessous. */
+.profile__head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--s5);
+    margin-top: -68px;
+    padding: 0 var(--s5);
+}
+.profile__avatar .avatar {
+    box-shadow: 0 0 0 5px var(--bg);
+}
+.profile__id {
+    display: grid;
+    gap: var(--s2);
+    min-width: 0;
+    padding-top: calc(68px + var(--s3));
+}
+.profile__name {
+    font-size: var(--fs-3xl);
+    font-weight: 800;
+    font-stretch: var(--wdth-condensed);
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+    overflow-wrap: anywhere;
+}
+.profile__bio {
+    max-width: 62ch;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+}
+.profile__bio--empty {
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+}
+.profile__edit {
+    margin-top: calc(68px + var(--s3));
+}
+.profile__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3) var(--s7);
+    margin-top: var(--s6);
+    padding: var(--s4) var(--s5);
+    border-block: 1px solid var(--line);
+}
+.profile__stats dt {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.profile__stats dd {
+    margin: 0;
+    font-size: var(--fs-xl);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.profile__tops,
+.profile__opinions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s7);
+    margin-top: var(--s7);
+}
+
+/* Top 3 : le rang en grand, à moitié caché derrière la couverture. */
+.top__list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s4);
+    margin-top: var(--s3);
+}
+.top__link {
+    position: relative;
+    display: block;
+    padding-left: 42px;
+    color: inherit;
+    text-decoration: none;
+}
+.top__rank {
+    position: absolute;
+    left: 0;
+    top: 46%;
+    font-size: 6rem;
+    font-weight: 900;
+    font-stretch: var(--wdth-condensed);
+    line-height: 0.8;
+    color: var(--bg);
+    -webkit-text-stroke: 2px var(--line-strong);
+    paint-order: stroke fill;
+    user-select: none;
+}
+.top__item--1 .top__rank {
+    -webkit-text-stroke-color: var(--accent);
+}
+.top__cover {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+}
+.top__title {
+    display: -webkit-box;
+    margin-top: var(--s2);
+    overflow: hidden;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    line-height: 1.3;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+a.top__link:hover .top__title {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+a.top__link:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 4px;
+    border-radius: var(--r-ctrl);
+}
+.top__empty {
+    margin-top: var(--s3);
+    padding: var(--s4);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-ctrl);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+/* Derniers avis */
+.pop__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+}
+.pop__all {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.pop__list {
+    display: grid;
+    gap: var(--s4);
+    margin-top: var(--s3);
+}
+.pop__item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s3);
+}
+.pop__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+.pop__title {
+    font-weight: 700;
+}
+.pop__reason {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--fs-sm);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.pop__reason--none {
+    color: var(--text-faint);
+}
+.pop__votes {
+    display: inline-flex;
+    gap: var(--s3);
+    margin-top: 2px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+.pop__vote {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.pop__vote--up svg {
+    color: var(--good);
+}
+.pop__vote--down svg {
+    color: var(--danger);
+}
+
+@media (max-width: 760px) {
+    .profile__head {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: var(--s3);
+        margin-top: -52px;
+        padding: 0 var(--s3);
+    }
+    .profile__avatar .avatar--xl {
+        width: 104px;
+        height: 104px;
+        font-size: 2.25rem;
+    }
+    .profile__id {
+        padding-top: 0;
+    }
+    .profile__edit {
+        justify-self: start;
+        margin-top: 0;
+    }
+    .profile__stats {
+        gap: var(--s3) var(--s5);
+        padding: var(--s3) var(--s3);
+    }
+    .profile__tops,
+    .profile__opinions {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--s6);
+    }
+    .top__list {
+        gap: var(--s3);
+    }
+    .top__link {
+        padding-left: 26px;
+    }
+    .top__rank {
+        font-size: 4.25rem;
+    }
+}

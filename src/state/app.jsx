@@ -4,6 +4,7 @@ import { api, ApiError } from '../lib/api.js';
 import { load, save } from '../lib/storage.js';
 import { useUi } from './ui.jsx';
 import { findEntries, summarize } from '../lib/meta.js';
+import { uploadMedia, bannerFiles } from '../lib/profileMedia.js';
 
 const AppContext = createContext(null);
 const SAVE_DELAY = 700;
@@ -169,11 +170,40 @@ export function AppProvider({ children }) {
         [tokenFor],
     );
 
+    // image : photo fixe 256 × 256 (partout sur le site), null pour la retirer.
+    // anim : { file, framing } pour un GIF, animé seulement sur la page de profil.
     const setProfilePhoto = useCallback(
-        async (profileId, image, { asAdmin = false } = {}) => {
+        async (profileId, image, { asAdmin = false, anim = null } = {}) => {
             const token = tokenFor(profileId, asAdmin);
-            if (image) await api.setAvatar(profileId, image, token);
-            else await api.removeAvatar(profileId, token);
+            try {
+                if (image) await api.setAvatar(profileId, image, token);
+                else await api.removeAvatar(profileId, token);
+                if (image && anim) await uploadMedia(profileId, 'anim', { file: anim.file }, anim.framing, token);
+            } finally {
+                await refreshProfiles();
+            }
+        },
+        [refreshProfiles, tokenFor],
+    );
+
+    // Bannière de la page de profil : { photo, framing } ou null pour la retirer.
+    const setProfileBanner = useCallback(
+        async (profileId, banner, { asAdmin = false } = {}) => {
+            const token = tokenFor(profileId, asAdmin);
+            try {
+                if (banner) await uploadMedia(profileId, 'banner', await bannerFiles(banner.photo), banner.framing, token);
+                else await api.media.remove(profileId, 'banner', token);
+            } finally {
+                await refreshProfiles();
+            }
+        },
+        [refreshProfiles, tokenFor],
+    );
+
+    // Bio et top 3 : { bio, top: { anime: [ids], manga: [ids] } }.
+    const updateProfileInfo = useCallback(
+        async (profileId, changes) => {
+            await api.updateProfile(profileId, changes, tokenFor(profileId));
             await refreshProfiles();
         },
         [refreshProfiles, tokenFor],
@@ -400,6 +430,8 @@ export function AppProvider({ children }) {
         renameProfile,
         changePin,
         setProfilePhoto,
+        setProfileBanner,
+        updateProfileInfo,
         deleteProfile,
         updateItem,
         addItem,
