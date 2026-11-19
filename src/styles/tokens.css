@@ -23,6 +23,8 @@
     --accent-soft: rgb(227 179 65 / 0.14);
     --danger: #f2786d;
     --danger-soft: rgb(242 120 109 / 0.12);
+    --good: #5fd08a;
+    --good-soft: rgb(95 208 138 / 0.14);
     --ongoing: #7fb8f0;
     --completed: #7fd3a1;
     --cover-bg: #23262d;
@@ -85,6 +87,8 @@
     --accent-soft: rgb(143 100 0 / 0.1);
     --danger: #c0392b;
     --danger-soft: rgb(192 57 43 / 0.08);
+    --good: #1d8a4a;
+    --good-soft: rgb(29 138 74 / 0.1);
     --ongoing: #2f6fb3;
     --completed: #1f8a4c;
     --cover-bg: #e1e4e9;

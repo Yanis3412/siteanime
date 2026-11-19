@@ -6,11 +6,11 @@ import { Cover } from './ui/Cover.jsx';
 import { Menu } from './ui/Menu.jsx';
 import { percentOf, progressOf, statusOf, stepProgress, isCaughtUp } from '../lib/items.js';
 import { useItemActions } from '../hooks/useItemActions.js';
-import { DislikeDialog } from './DislikeDialog.jsx';
+import { OpinionDialog } from './OpinionDialog.jsx';
 
 export const ItemCard = memo(function ItemCard({ item, readOnly }) {
     const actions = useItemActions();
-    const [disliking, setDisliking] = useState(false);
+    const [opinion, setOpinion] = useState(null); // 'reco' ou 'meh' : fenêtre d'avis ouverte
     const { current, total } = progressOf(item);
     const percent = percentOf(item);
     const status = statusOf(item);
@@ -66,21 +66,21 @@ export const ItemCard = memo(function ItemCard({ item, readOnly }) {
                                 onSelect: () => actions.toggleWatchlist(item),
                             },
                             {
-                                label: item.recommended ? 'Ne plus recommander' : 'Recommander aux autres',
+                                label: item.recommended ? 'Ne plus recommander' : 'Recommander…',
                                 icon: ThumbsUp,
-                                onSelect: () => actions.toggleRecommended(item),
+                                onSelect: () => (item.recommended ? actions.removeRecommended(item) : setOpinion('reco')),
                             },
                             {
                                 label: item.disliked ? 'Retirer de « Meh »' : 'Meh…',
                                 icon: ThumbsDown,
-                                onSelect: () => (item.disliked ? actions.removeDisliked(item) : setDisliking(true)),
+                                onSelect: () => (item.disliked ? actions.removeDisliked(item) : setOpinion('meh')),
                             },
                             { label: 'Actualiser les infos', icon: RefreshCw, onSelect: () => actions.refresh(item) },
                             'separator',
                             { label: 'Supprimer', icon: Trash2, danger: true, onSelect: () => actions.remove(item) },
                         ]}
                     />
-                    {disliking && <DislikeDialog item={item} open onClose={() => setDisliking(false)} />}
+                    {opinion && <OpinionDialog item={item} kind={opinion} open onClose={() => setOpinion(null)} />}
                 </div>
             )}
         </article>

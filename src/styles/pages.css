@@ -845,14 +845,84 @@
     color: var(--text-faint);
     font-size: var(--fs-sm);
 }
+.opinion__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px var(--s4);
+    margin-top: 6px;
+}
 .opinion__edit {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    justify-self: start;
-    margin-top: 2px;
     font-size: var(--fs-sm);
     color: var(--text-muted);
+}
+.reco__add {
+    justify-self: start;
+    margin-top: var(--s2);
+}
+
+/* Pouces sous un avis : vert vers le haut (d'accord), rouge vers le bas (pas d'accord) */
+.votes {
+    display: flex;
+    gap: 6px;
+}
+.vote {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: background-color 120ms, border-color 120ms, color 120ms;
+}
+.vote--up svg {
+    color: var(--good);
+}
+.vote--down svg {
+    color: var(--danger);
+}
+.vote:not([aria-disabled='true']):hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+.vote--up.is-on,
+.vote--up.is-on:hover {
+    border-color: var(--good);
+    background: var(--good-soft);
+    color: var(--good);
+}
+.vote--down.is-on,
+.vote--down.is-on:hover {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+.vote.is-on svg {
+    fill: currentColor;
+    fill-opacity: 0.25;
+}
+.vote[aria-disabled='true'] {
+    cursor: default;
+}
+.vote:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .vote {
+        transition: none;
+    }
 }
 .dislike-form {
     display: grid;

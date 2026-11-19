@@ -68,6 +68,9 @@ export function sanitizeItem(raw) {
         status,
         fav: !!raw.fav,
         recommended: !!raw.recommended,
+        // Raison lisible par tous les profils dans « Recommandations ».
+        recommendedReason: cleanString(raw.recommendedReason, 1000),
+        recommendedAt: raw.recommended ? num(raw.recommendedAt) || num(raw.updatedAt) || Date.now() : null,
         disliked: !!raw.disliked,
         // Raison lisible par tous les profils dans « Meh ».
         dislikedReason: cleanString(raw.dislikedReason, 1000),

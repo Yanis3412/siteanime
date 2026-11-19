@@ -7,7 +7,7 @@ import { useItemActions } from '../hooks/useItemActions.js';
 import { Cover } from '../components/ui/Cover.jsx';
 import { Dialog } from '../components/ui/Dialog.jsx';
 import { ChaptersSection } from '../components/ChaptersSection.jsx';
-import { DislikeDialog } from '../components/DislikeDialog.jsx';
+import { OpinionDialog, OPINIONS } from '../components/OpinionDialog.jsx';
 import { findEntry, externalLink } from '../lib/meta.js';
 import {
     percentOf,
@@ -27,7 +27,7 @@ export function ItemPage() {
     const { library, readOnly } = useApp();
     const actions = useItemActions();
     const [editing, setEditing] = useState(false);
-    const [disliking, setDisliking] = useState(false);
+    const [opinion, setOpinion] = useState(null); // 'reco' ou 'meh' : fenêtre d'avis ouverte
     const item = library?.items.find((it) => it.id === id);
 
     if (!library) return <div className="page"><p className="muted">Chargement…</p></div>;
@@ -157,13 +157,13 @@ export function ItemPage() {
                                 {item.fav ? <BookmarkCheck size={16} aria-hidden="true" /> : <Bookmark size={16} aria-hidden="true" />}
                                 {item.fav ? 'Retirer de la watchlist' : 'Mettre dans la watchlist'}
                             </button>
-                            <button className={`btn btn--secondary ${item.recommended ? 'is-on' : ''}`} onClick={() => actions.toggleRecommended(item)} aria-pressed={item.recommended}>
+                            <button className={`btn btn--secondary ${item.recommended ? 'is-on' : ''}`} onClick={() => (item.recommended ? actions.removeRecommended(item) : setOpinion('reco'))} aria-pressed={!!item.recommended}>
                                 <ThumbsUp size={16} aria-hidden="true" />
                                 {item.recommended ? 'Recommandé' : 'Recommander'}
                             </button>
                             <button
                                 className={`btn btn--secondary ${item.disliked ? 'is-on' : ''}`}
-                                onClick={() => (item.disliked ? actions.removeDisliked(item) : setDisliking(true))}
+                                onClick={() => (item.disliked ? actions.removeDisliked(item) : setOpinion('meh'))}
                                 aria-pressed={!!item.disliked}
                             >
                                 <ThumbsDown size={16} aria-hidden="true" />
@@ -189,18 +189,8 @@ export function ItemPage() {
                         </div>
                     )}
 
-                    {item.disliked && (
-                        <section className="note dislike-reason">
-                            <h2 className="section-title">Pourquoi c’est meh</h2>
-                            {item.dislikedReason ? <p className="note__text">{item.dislikedReason}</p> : <p className="muted">{readOnly ? 'Pas de raison donnée.' : 'Tu n’as pas encore expliqué pourquoi.'}</p>}
-                            {!readOnly && (
-                                <button className="btn btn--ghost btn--sm dislike-reason__edit" onClick={() => setDisliking(true)}>
-                                    <Pencil size={15} aria-hidden="true" />
-                                    {item.dislikedReason ? 'Modifier' : 'Expliquer pourquoi'}
-                                </button>
-                            )}
-                        </section>
-                    )}
+                    {item.recommended && <ReasonSection item={item} kind="reco" readOnly={readOnly} onEdit={() => setOpinion('reco')} />}
+                    {item.disliked && <ReasonSection item={item} kind="meh" readOnly={readOnly} onEdit={() => setOpinion('meh')} />}
 
                     {item.type === 'Manga' && !readOnly && <ChaptersSection item={item} />}
 
@@ -210,7 +200,7 @@ export function ItemPage() {
             </div>
 
             <EditDialog item={item} open={editing} onClose={() => setEditing(false)} />
-            {disliking && <DislikeDialog item={item} open onClose={() => setDisliking(false)} />}
+            {opinion && <OpinionDialog item={item} kind={opinion} open onClose={() => setOpinion(null)} />}
         </div>
     );
 }
@@ -386,5 +376,22 @@ function EditForm({ item, onClose }) {
                 <button className="btn btn--primary">Enregistrer</button>
             </div>
         </form>
+    );
+}
+
+// Raison d'un avis public (recommandation ou « Meh »), lisible par tous les profils.
+function ReasonSection({ item, kind, readOnly, onEdit }) {
+    const text = item[OPINIONS[kind].reason];
+    return (
+        <section className="note dislike-reason">
+            <h2 className="section-title">{kind === 'reco' ? 'Pourquoi le recommander' : 'Pourquoi c’est meh'}</h2>
+            {text ? <p className="note__text">{text}</p> : <p className="muted">{readOnly ? 'Pas de raison donnée.' : 'Tu n’as pas encore expliqué pourquoi.'}</p>}
+            {!readOnly && (
+                <button className="btn btn--ghost btn--sm dislike-reason__edit" onClick={onEdit}>
+                    <Pencil size={15} aria-hidden="true" />
+                    {text ? 'Modifier' : 'Expliquer pourquoi'}
+                </button>
+            )}
+        </section>
     );
 }

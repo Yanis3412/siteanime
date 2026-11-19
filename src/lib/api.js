@@ -50,6 +50,8 @@ export const api = {
     saveLibrary: (id, payload, token) => request('PUT', `library?id=${encodeURIComponent(id)}`, { body: payload, token }),
     getRecommendations: () => request('GET', 'library?recommended=1'),
     getDisliked: () => request('GET', 'library?disliked=1'),
+    // Pouce sur l'avis d'un autre profil : value 1 (d'accord), -1 (pas d'accord), 0 (retirer).
+    vote: ({ owner, itemId, kind, value }, token) => request('POST', 'library?vote=1', { body: { owner, itemId, kind, value }, token }),
 
     chapters: {
         list: (profileId, itemId, token) => request('GET', `chapters?${qs({ profileId, itemId })}`, { token }),
