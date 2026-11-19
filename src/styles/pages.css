@@ -224,7 +224,10 @@
     .search--compact {
         flex-basis: 100%;
     }
-    /* Statut et tri sur une même ligne */
+    /* Tri et ordre sur une même ligne, sur toute la largeur */
+    .toolbar .sort {
+        flex: 1;
+    }
     .toolbar .select {
         flex: 1;
         min-width: 0;
@@ -242,7 +245,13 @@
         padding: 0 6px;
     }
 }
+.sort {
+    display: flex;
+    gap: var(--s2);
+    min-width: 0;
+}
 .sort-order {
+    flex: none;
     min-height: 36px;
     width: 36px;
     color: var(--text-muted);
