@@ -71,7 +71,7 @@ export const ItemCard = memo(function ItemCard({ item, readOnly }) {
                                 onSelect: () => actions.toggleRecommended(item),
                             },
                             {
-                                label: item.disliked ? 'Retirer de « Pas aimés »' : 'Pas aimé…',
+                                label: item.disliked ? 'Retirer de « Meh »' : 'Meh…',
                                 icon: ThumbsDown,
                                 onSelect: () => (item.disliked ? actions.removeDisliked(item) : setDisliking(true)),
                             },

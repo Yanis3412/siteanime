@@ -63,7 +63,8 @@ export function App() {
                 <Route path="/animes" element={<LibraryPage view="Anime" />} />
                 <Route path="/watchlist" element={<LibraryPage view="watchlist" />} />
                 <Route path="/recommandations" element={<RecommendationsPage />} />
-                <Route path="/pas-aimes" element={<DislikedPage />} />
+                <Route path="/meh" element={<DislikedPage />} />
+                <Route path="/pas-aimes" element={<Navigate to="/meh" replace />} />
                 <Route path="/activite" element={<ActivityPage />} />
                 <Route path="/sites" element={<SitesPage />} />
                 <Route path="/oeuvre/:id" element={<ItemPage />} />

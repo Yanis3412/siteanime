@@ -45,7 +45,7 @@ export function ItemPage() {
     }
 
     const back = item.disliked
-        ? { to: '/pas-aimes', label: 'Pas aimés' }
+        ? { to: '/meh', label: 'Meh' }
         : item.fav
           ? { to: '/watchlist', label: 'Watchlist' }
           : item.type === 'Anime' ? { to: '/animes', label: 'Animes' } : { to: '/mangas', label: 'Mangas' };
@@ -89,7 +89,7 @@ export function ItemPage() {
                         <span className={`badge badge--${status}`}>{statusLabel[status]}</span>
                         {item.fav && <span className="badge">Dans la watchlist</span>}
                         {item.recommended && <span className="badge">Recommandé</span>}
-                        {item.disliked && <span className="badge">Pas aimé</span>}
+                        {item.disliked && <span className="badge">Meh</span>}
                     </div>
 
                     <section className="progress" aria-label="Progression">
@@ -167,7 +167,7 @@ export function ItemPage() {
                                 aria-pressed={!!item.disliked}
                             >
                                 <ThumbsDown size={16} aria-hidden="true" />
-                                Pas aimé
+                                Meh
                             </button>
                             <button className="btn btn--ghost" onClick={() => actions.refresh(item)}>
                                 <RefreshCw size={16} aria-hidden="true" />
@@ -191,7 +191,7 @@ export function ItemPage() {
 
                     {item.disliked && (
                         <section className="note dislike-reason">
-                            <h2 className="section-title">Pourquoi {readOnly ? 'ce titre n’a pas plu' : 'tu n’as pas aimé'}</h2>
+                            <h2 className="section-title">Pourquoi c’est meh</h2>
                             {item.dislikedReason ? <p className="note__text">{item.dislikedReason}</p> : <p className="muted">{readOnly ? 'Pas de raison donnée.' : 'Tu n’as pas encore expliqué pourquoi.'}</p>}
                             {!readOnly && (
                                 <button className="btn btn--ghost btn--sm dislike-reason__edit" onClick={() => setDisliking(true)}>

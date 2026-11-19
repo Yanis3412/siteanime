@@ -1,5 +1,5 @@
 // Grille des mangas, des animes ou de la watchlist, avec filtre, statut et tri.
-// Les titres « Pas aimés » ont leur propre section (page Pas aimés) : ils n'apparaissent pas ici.
+// Les titres « Meh » ont leur propre section (page Meh) : ils n'apparaissent pas ici.
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Plus, Search } from 'lucide-react';

@@ -69,7 +69,7 @@ export function sanitizeItem(raw) {
         fav: !!raw.fav,
         recommended: !!raw.recommended,
         disliked: !!raw.disliked,
-        // Raison lisible par tous les profils dans « Pas aimés ».
+        // Raison lisible par tous les profils dans « Meh ».
         dislikedReason: cleanString(raw.dislikedReason, 1000),
         dislikedAt: raw.disliked ? num(raw.dislikedAt) || num(raw.updatedAt) || Date.now() : null,
         note: cleanString(raw.note, 4000),
