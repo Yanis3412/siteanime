@@ -233,6 +233,22 @@
         width: 100%;
         text-overflow: ellipsis;
     }
+    /* Les quatre filtres sur toute la largeur, le tri et son ordre en dessous */
+    .toolbar .segmented {
+        flex-basis: 100%;
+    }
+    .toolbar .segmented__opt {
+        flex: 1;
+        padding: 0 6px;
+    }
+}
+.sort-order {
+    min-height: 36px;
+    width: 36px;
+    color: var(--text-muted);
+}
+.sort-order:hover {
+    color: var(--text);
 }
 
 /* ---------- États vides ---------- */
@@ -630,6 +646,46 @@
     height: 40px;
     border-radius: var(--r-cover);
     border: 1.5px dashed var(--line-strong);
+}
+.add__done {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px var(--s2);
+    margin-top: var(--s3);
+    font-weight: 600;
+    cursor: pointer;
+    width: fit-content;
+}
+.add__done input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+.add__done-hint {
+    font-size: var(--fs-sm);
+    font-weight: 400;
+    color: var(--text-muted);
+}
+.add__ask {
+    display: grid;
+    gap: var(--s4);
+    margin-top: var(--s4);
+    padding: var(--s4);
+    border-radius: var(--r-panel);
+    background: var(--bg-sunken);
+}
+.add__ask-text {
+    color: var(--text-muted);
+    max-width: 60ch;
+}
+.add__ask-text strong {
+    color: var(--text);
+}
+.add__ask .input {
+    max-width: 180px;
 }
 @media (max-width: 520px) {
     .add__bar {

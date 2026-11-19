@@ -1,7 +1,7 @@
 // Page détaillée d'une œuvre : progression, saisons, résumé, note et actions.
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Minus, Pencil, Plus, RefreshCw, ThumbsUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Minus, Pencil, Plus, RefreshCw, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useItemActions } from '../hooks/useItemActions.js';
 import { Cover } from '../components/ui/Cover.jsx';
@@ -83,6 +83,7 @@ export function ItemPage() {
                         <span className={`badge badge--${status}`}>{statusLabel[status]}</span>
                         {item.fav && <span className="badge">Dans la watchlist</span>}
                         {item.recommended && <span className="badge">Recommandé</span>}
+                        {item.disliked && <span className="badge">Pas aimé</span>}
                     </div>
 
                     <section className="progress" aria-label="Progression">
@@ -153,6 +154,10 @@ export function ItemPage() {
                             <button className={`btn btn--secondary ${item.recommended ? 'is-on' : ''}`} onClick={() => actions.toggleRecommended(item)} aria-pressed={item.recommended}>
                                 <ThumbsUp size={16} aria-hidden="true" />
                                 {item.recommended ? 'Recommandé' : 'Recommander'}
+                            </button>
+                            <button className={`btn btn--secondary ${item.disliked ? 'is-on' : ''}`} onClick={() => actions.toggleDisliked(item)} aria-pressed={!!item.disliked}>
+                                <ThumbsDown size={16} aria-hidden="true" />
+                                Pas aimé
                             </button>
                             <button className="btn btn--ghost" onClick={() => actions.refresh(item)}>
                                 <RefreshCw size={16} aria-hidden="true" />

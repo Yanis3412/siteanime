@@ -68,6 +68,7 @@ export function sanitizeItem(raw) {
         status,
         fav: !!raw.fav,
         recommended: !!raw.recommended,
+        disliked: !!raw.disliked,
         note: cleanString(raw.note, 4000),
         imageUrl: url(raw.imageUrl),
         officialUrl: url(raw.officialUrl),

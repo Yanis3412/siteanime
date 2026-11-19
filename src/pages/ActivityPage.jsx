@@ -27,7 +27,8 @@ function describe(e) {
     const verb = e.type === 'Anime' ? 'a vu' : 'a lu';
     switch (e.kind) {
         case 'added':
-            return [e.fav ? 'a ajouté' : 'a ajouté', e.fav ? 'à sa watchlist' : 'à sa liste'];
+            if (e.done) return ['a ajouté', e.type === 'Anime' ? 'à sa liste, déjà vu en entier' : 'à sa liste, déjà lu en entier'];
+            return ['a ajouté', e.fav ? 'à sa watchlist' : 'à sa liste'];
         case 'progress': {
             const count = e.to - e.from;
             if (e.seasons) return [`${verb} ${plural(count, unit[0], unit[1])} de`, ''];

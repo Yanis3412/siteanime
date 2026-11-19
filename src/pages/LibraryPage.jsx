@@ -1,7 +1,8 @@
 // Grille des mangas, des animes ou de la watchlist, avec filtre, statut et tri.
+// Les titres « Pas aimés » sont rangés à part : ils n'apparaissent qu'avec ce filtre.
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Plus, Search } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { ItemCard } from '../components/ItemCard.jsx';
 import { percentOf, statusOf } from '../lib/items.js';
@@ -13,16 +14,37 @@ const EMPTY = {
     Anime: { title: 'Aucun anime pour l’instant', text: 'Ajoute un anime pour suivre les épisodes que tu as vus.', cta: 'Ajouter un anime' },
     watchlist: { title: 'Ta watchlist est vide', text: 'Depuis le menu d’un titre, choisis « Mettre dans la watchlist » pour le garder de côté.' },
 };
+const byTitle = (a, b) => a.title.localeCompare(b.title, 'fr');
+const byDate = (field) => (a, b) => (a[field] || 0) - (b[field] || 0);
+
+// cmp trie dans l'ordre croissant ; dir est l'ordre proposé par défaut.
 const SORTS = {
-    title: { label: 'Titre', fn: (a, b) => a.title.localeCompare(b.title, 'fr') },
-    updated: { label: 'Modifiés récemment', fn: (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) },
-    added: { label: 'Ajoutés récemment', fn: (a, b) => (b.addedAt || 0) - (a.addedAt || 0) },
-    progress: { label: 'Progression', fn: (a, b) => (percentOf(b) ?? -1) - (percentOf(a) ?? -1) },
+    title: { label: 'Titre', cmp: byTitle, dir: 'asc', orders: { asc: 'De A à Z', desc: 'De Z à A' } },
+    updated: { label: 'Dernière modification', cmp: byDate('updatedAt'), dir: 'desc', orders: { desc: 'Les plus récents d’abord', asc: 'Les plus anciens d’abord' } },
+    added: { label: 'Date d’ajout', cmp: byDate('addedAt'), dir: 'desc', orders: { desc: 'Les plus récents d’abord', asc: 'Les plus anciens d’abord' } },
+    progress: { label: 'Progression', cmp: null, dir: 'asc', orders: { asc: 'Les moins avancés d’abord', desc: 'Les plus avancés d’abord' } },
 };
+
+function sortItems(items, sortId, dir) {
+    const sign = dir === 'desc' ? -1 : 1;
+    const sort = SORTS[sortId] || SORTS.title;
+    return [...items].sort((a, b) => {
+        if (sortId === 'progress') {
+            // Total inconnu : toujours à la fin.
+            const pa = percentOf(a);
+            const pb = percentOf(b);
+            if (pa === null || pb === null) return pa === pb ? byTitle(a, b) : pa === null ? 1 : -1;
+            return sign * (pa - pb) || byTitle(a, b);
+        }
+        return sign * sort.cmp(a, b) || byTitle(a, b);
+    });
+}
+
 const FILTERS = [
     { id: 'all', label: 'Tous' },
     { id: 'ongoing', label: 'En cours' },
     { id: 'completed', label: 'Terminés' },
+    { id: 'disliked', label: 'Pas aimés' },
 ];
 
 export function LibraryPage({ view }) {
@@ -31,6 +53,8 @@ export function LibraryPage({ view }) {
     const [query, setQuery] = useState('');
     const [filter, setFilter] = useState('all');
     const [sort, setSort] = useState(() => load('sort', 'title'));
+    const [dirs, setDirs] = useState(() => load('sortDirs', {}));
+    const dir = dirs[sort] || SORTS[sort]?.dir || 'asc';
 
     const base = useMemo(() => {
         const items = library?.items || [];
@@ -39,18 +63,28 @@ export function LibraryPage({ view }) {
         return items.filter((it) => it.type === view && !it.fav);
     }, [library, view]);
 
+    const dislikedCount = useMemo(() => base.filter((it) => it.disliked).length, [base]);
+    const filters = view === 'watchlist' ? FILTERS.filter((f) => f.id !== 'disliked') : FILTERS;
+
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
-        return base
+        const shown = base
             .filter((it) => !q || it.title.toLowerCase().includes(q))
-            .filter((it) => filter === 'all' || statusOf(it) === filter)
-            .sort(SORTS[sort]?.fn || SORTS.title.fn);
-    }, [base, query, filter, sort]);
+            .filter((it) => (filter === 'disliked' ? it.disliked : !it.disliked && (filter === 'all' || statusOf(it) === filter)));
+        return sortItems(shown, sort, dir);
+    }, [base, query, filter, sort, dir]);
 
     const changeSort = (value) => {
         setSort(value);
         save('sort', value);
     };
+
+    const flipOrder = () => {
+        const next = { ...dirs, [sort]: dir === 'asc' ? 'desc' : 'asc' };
+        setDirs(next);
+        save('sortDirs', next);
+    };
+    const orders = (SORTS[sort] || SORTS.title).orders;
 
     const empty = EMPTY[view];
 
@@ -67,10 +101,11 @@ export function LibraryPage({ view }) {
                             <Search size={16} aria-hidden="true" />
                             <input className="search__input" placeholder="Filtrer par titre" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Filtrer par titre" />
                         </label>
-                        <div className="segmented" role="radiogroup" aria-label="Statut de parution">
-                            {FILTERS.map((f) => (
+                        <div className="segmented" role="radiogroup" aria-label="Afficher">
+                            {filters.map((f) => (
                                 <button key={f.id} role="radio" aria-checked={filter === f.id} className={`segmented__opt ${filter === f.id ? 'is-active' : ''}`} onClick={() => setFilter(f.id)}>
                                     {f.label}
+                                    {f.id === 'disliked' && dislikedCount > 0 && <span className="segmented__count">{dislikedCount}</span>}
                                 </button>
                             ))}
                         </div>
@@ -84,6 +119,9 @@ export function LibraryPage({ view }) {
                                 ))}
                             </select>
                         </label>
+                        <button className="btn btn--secondary btn--icon sort-order" onClick={flipOrder} title={`${orders[dir]} (cliquer pour inverser)`} aria-label={`Ordre : ${orders[dir].toLowerCase()}. Inverser`}>
+                            {dir === 'asc' ? <ArrowUpNarrowWide size={17} /> : <ArrowDownWideNarrow size={17} />}
+                        </button>
                     </div>
                 )}
             </div>
@@ -107,6 +145,14 @@ export function LibraryPage({ view }) {
                             {empty.cta}
                         </button>
                     )}
+                </div>
+            ) : visible.length === 0 && filter === 'disliked' && !query.trim() ? (
+                <div className="empty">
+                    <h2 className="empty__title">Aucun titre pas aimé</h2>
+                    {!readOnly && <p className="empty__text">Depuis la fiche d’un titre, choisis « Pas aimé » pour le ranger ici, à part du reste de ta liste.</p>}
+                    <button className="btn btn--secondary" onClick={() => setFilter('all')}>
+                        Tout afficher
+                    </button>
                 </div>
             ) : visible.length === 0 ? (
                 <div className="empty">
