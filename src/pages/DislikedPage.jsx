@@ -1,4 +1,4 @@
-// « Pas aimés » : les titres que chaque profil n'a pas aimés, et pourquoi.
+// « Meh » : les titres que chaque profil n'a pas aimés, et pourquoi.
 // Un titre pas aimé par plusieurs profils n'apparaît qu'une fois, avec l'avis de chacun.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -78,7 +78,7 @@ export function DislikedPage() {
         <div className="page">
             <div className="page__head">
                 <h1 className="page__title">
-                    Pas aimés
+                    Meh
                     {profiles && <span className="page__count">{works.length}</span>}
                 </h1>
                 {profiles?.length > 1 && (
@@ -98,7 +98,7 @@ export function DislikedPage() {
             {profiles && works.length === 0 && (
                 <div className="empty">
                     <h2 className="empty__title">{excluded.size ? 'Rien pour les profils choisis' : 'Personne n’a encore rangé de titre ici'}</h2>
-                    <p className="empty__text">Depuis la fiche d’un titre, choisis « Pas aimé » et explique pourquoi si tu veux : tout le monde pourra le lire ici.</p>
+                    <p className="empty__text">Depuis la fiche d’un titre, choisis « Meh » et explique pourquoi si tu veux : tout le monde pourra le lire ici.</p>
                 </div>
             )}
 

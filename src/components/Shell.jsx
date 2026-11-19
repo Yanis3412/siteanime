@@ -14,7 +14,7 @@ const TABS = [
     { to: '/animes', label: 'Animes' },
     { to: '/watchlist', label: 'Watchlist' },
     { to: '/recommandations', label: 'Recommandations' },
-    { to: '/pas-aimes', label: 'Pas aimés' },
+    { to: '/meh', label: 'Meh' },
     { to: '/activite', label: 'Activité' },
     { to: '/sites', label: 'Sites' },
 ];

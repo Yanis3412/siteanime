@@ -75,7 +75,7 @@ export function useItemActions() {
             update: updateItem,
             refresh,
             remove,
-            // Watchlist, Recommandé et Pas aimé s'excluent : choisir l'un retire les autres.
+            // Watchlist, Recommandé et Meh s'excluent : choisir l'un retire les autres.
             toggleWatchlist: (item) => {
                 updateItem(item.id, item.fav ? { fav: false } : { fav: true, disliked: false });
                 toast(item.fav ? `${item.title} retiré de la watchlist.` : `${item.title} ajouté à la watchlist.`);
@@ -84,10 +84,10 @@ export function useItemActions() {
                 updateItem(item.id, item.recommended ? { recommended: false } : { recommended: true, disliked: false });
                 toast(item.recommended ? `Tu ne recommandes plus ${item.title}.` : `${item.title} est recommandé aux autres profils.`);
             },
-            // Pour ranger un titre dans « Pas aimés », voir DislikeDialog (raison facultative).
+            // Pour ranger un titre dans « Meh », voir DislikeDialog (raison facultative).
             removeDisliked: (item) => {
                 updateItem(item.id, { disliked: false });
-                toast(`${item.title} n’est plus dans « Pas aimés ».`);
+                toast(`${item.title} n’est plus dans « Meh ».`);
             },
         }),
         [updateItem, refresh, remove, toast],

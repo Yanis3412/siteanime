@@ -802,7 +802,7 @@
     color: var(--accent);
 }
 
-/* ---------- Pas aimés ---------- */
+/* ---------- Meh (titres pas aimés) ---------- */
 .dislike {
     align-items: flex-start;
     padding: var(--s4) 0;
