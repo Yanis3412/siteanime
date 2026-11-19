@@ -109,19 +109,21 @@ export function LibraryPage({ view }) {
                                 </button>
                             ))}
                         </div>
-                        <label className="select">
-                            <span className="sr-only">Trier par</span>
-                            <select value={sort} onChange={(e) => changeSort(e.target.value)}>
-                                {Object.entries(SORTS).map(([id, s]) => (
-                                    <option key={id} value={id}>
-                                        {s.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <button className="btn btn--secondary btn--icon sort-order" onClick={flipOrder} title={`${orders[dir]} (cliquer pour inverser)`} aria-label={`Ordre : ${orders[dir].toLowerCase()}. Inverser`}>
-                            {dir === 'asc' ? <ArrowUpNarrowWide size={17} /> : <ArrowDownWideNarrow size={17} />}
-                        </button>
+                        <div className="sort">
+                            <label className="select">
+                                <span className="sr-only">Trier par</span>
+                                <select value={sort} onChange={(e) => changeSort(e.target.value)}>
+                                    {Object.entries(SORTS).map(([id, s]) => (
+                                        <option key={id} value={id}>
+                                            {s.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <button className="btn btn--secondary btn--icon sort-order" onClick={flipOrder} title={`${orders[dir]} (cliquer pour inverser)`} aria-label={`Ordre : ${orders[dir].toLowerCase()}. Inverser`}>
+                                {dir === 'asc' ? <ArrowUpNarrowWide size={17} /> : <ArrowDownWideNarrow size={17} />}
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
