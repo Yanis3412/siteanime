@@ -35,7 +35,8 @@ function diff(before, after) {
     for (const it of after) {
         const prev = old.get(it.id);
         if (!prev) {
-            events.push({ kind: 'added', ...base(it), fav: !!it.fav });
+            const { current, total } = progressOf(it);
+            events.push({ kind: 'added', ...base(it), fav: !!it.fav, done: !!total && current >= total });
             continue;
         }
         const a = progressOf(prev).current;
@@ -53,6 +54,10 @@ async function append(kv, profileId, events) {
     const now = Date.now();
     let log = (await kv.get(activityKey(profileId))) || [];
     for (const ev of events) {
+        // Titre ajouté « déjà fini » : les saisons complétées juste après ne font pas une ligne de plus.
+        if ((ev.kind === 'progress' || ev.kind === 'finished') && log.some((e) => e.kind === 'added' && e.done && e.itemId === ev.itemId && now - e.at < MERGE_WINDOW)) {
+            continue;
+        }
         // Progression ou import sur le même titre peu de temps avant : on prolonge la même ligne.
         const i = log.findIndex((e) => e.kind === ev.kind && e.itemId === ev.itemId && now - e.at < MERGE_WINDOW);
         if ((ev.kind === 'progress' || ev.kind === 'imported') && i !== -1) {
@@ -102,6 +107,7 @@ export function statsOf(items) {
         const { current } = progressOf(it);
         if (it.type === 'Anime') s.episodes += current;
         else s.chapters += current;
+        if (it.disliked) continue; // ni dans la watchlist, ni « en cours »
         if (it.fav) s.watchlist++;
         else if (isFinished(it)) it.type === 'Anime' ? s.finishedAnime++ : s.finishedManga++;
         else if (current > 0) s.inProgress++;

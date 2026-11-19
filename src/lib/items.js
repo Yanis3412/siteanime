@@ -135,6 +135,7 @@ export function newItem(fields) {
         status: fields.status || 'unknown',
         fav: false,
         recommended: false,
+        disliked: false,
         note: '',
         imageUrl: fields.imageUrl || null,
         officialUrl: null,

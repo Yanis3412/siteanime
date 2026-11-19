@@ -75,13 +75,18 @@ export function useItemActions() {
             update: updateItem,
             refresh,
             remove,
+            // Watchlist, Recommandé et Pas aimé s'excluent : choisir l'un retire les autres.
             toggleWatchlist: (item) => {
-                updateItem(item.id, { fav: !item.fav });
+                updateItem(item.id, item.fav ? { fav: false } : { fav: true, disliked: false });
                 toast(item.fav ? `${item.title} retiré de la watchlist.` : `${item.title} ajouté à la watchlist.`);
             },
             toggleRecommended: (item) => {
-                updateItem(item.id, { recommended: !item.recommended });
+                updateItem(item.id, item.recommended ? { recommended: false } : { recommended: true, disliked: false });
                 toast(item.recommended ? `Tu ne recommandes plus ${item.title}.` : `${item.title} est recommandé aux autres profils.`);
+            },
+            toggleDisliked: (item) => {
+                updateItem(item.id, item.disliked ? { disliked: false } : { disliked: true, recommended: false, fav: false });
+                toast(item.disliked ? `${item.title} n’est plus dans « Pas aimés ».` : `${item.title} est rangé dans « Pas aimés ».`);
             },
         }),
         [updateItem, refresh, remove, toast],

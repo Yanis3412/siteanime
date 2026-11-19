@@ -1,7 +1,7 @@
 // Carte d'une œuvre dans la grille : couverture, titre, progression et réglage rapide.
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Bookmark, BookmarkCheck, Minus, MoreHorizontal, Plus, RefreshCw, ThumbsUp, Trash2 } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Minus, MoreHorizontal, Plus, RefreshCw, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { Cover } from './ui/Cover.jsx';
 import { Menu } from './ui/Menu.jsx';
 import { percentOf, progressOf, statusOf, stepProgress, isCaughtUp } from '../lib/items.js';
@@ -67,6 +67,11 @@ export const ItemCard = memo(function ItemCard({ item, readOnly }) {
                                 label: item.recommended ? 'Ne plus recommander' : 'Recommander aux autres',
                                 icon: ThumbsUp,
                                 onSelect: () => actions.toggleRecommended(item),
+                            },
+                            {
+                                label: item.disliked ? 'Retirer de « Pas aimés »' : 'Ranger dans « Pas aimés »',
+                                icon: ThumbsDown,
+                                onSelect: () => actions.toggleDisliked(item),
                             },
                             { label: 'Actualiser les infos', icon: RefreshCw, onSelect: () => actions.refresh(item) },
                             'separator',
