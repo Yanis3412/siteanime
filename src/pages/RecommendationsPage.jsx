@@ -4,25 +4,9 @@ import { Check, Plus } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { api } from '../lib/api.js';
-import { Cover } from '../components/ui/Cover.jsx';
+import { WorkCover } from '../components/WorkCover.jsx';
 import { newItem, sameWork, unitLabel } from '../lib/items.js';
 import { fetchSeasons, findEntry, coverOf } from '../lib/meta.js';
-
-// Couverture d'une recommandation, récupérée sur sa fiche si le profil d'origine ne l'a pas.
-function RecoCover({ item }) {
-    const [src, setSrc] = useState(item.imageUrl);
-    useEffect(() => {
-        if (item.imageUrl || !(item.malId || item.anilistId)) return;
-        let alive = true;
-        findEntry(item)
-            .then((e) => alive && setSrc(coverOf(e)))
-            .catch(() => {});
-        return () => {
-            alive = false;
-        };
-    }, [item]);
-    return <Cover src={src} title={item.title} className="cover--thumb-lg" />;
-}
 
 export function RecommendationsPage() {
     const { session, library, readOnly, addItem, updateItem, profile } = useApp();
@@ -121,7 +105,7 @@ export function RecommendationsPage() {
                 <ul className="recos">
                     {recommendations.map((rec) => (
                         <li key={`${rec.item.type}-${rec.item.malId || rec.item.anilistId || rec.item.title}`} className="reco">
-                            <RecoCover item={rec.item} />
+                            <WorkCover item={rec.item} />
                             <div className="reco__text">
                                 <span className="reco__title">{rec.item.title}</span>
                                 <span className="reco__meta">

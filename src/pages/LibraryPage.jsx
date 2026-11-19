@@ -1,5 +1,5 @@
 // Grille des mangas, des animes ou de la watchlist, avec filtre, statut et tri.
-// Les titres « Pas aimés » sont rangés à part : ils n'apparaissent qu'avec ce filtre.
+// Les titres « Pas aimés » ont leur propre section (page Pas aimés) : ils n'apparaissent pas ici.
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Plus, Search } from 'lucide-react';
@@ -44,7 +44,6 @@ const FILTERS = [
     { id: 'all', label: 'Tous' },
     { id: 'ongoing', label: 'En cours' },
     { id: 'completed', label: 'Terminés' },
-    { id: 'disliked', label: 'Pas aimés' },
 ];
 
 export function LibraryPage({ view }) {
@@ -59,18 +58,15 @@ export function LibraryPage({ view }) {
     const base = useMemo(() => {
         const items = library?.items || [];
         // Comme avant : un titre dans la watchlist n'apparaît plus dans Mangas / Animes.
-        if (view === 'watchlist') return items.filter((it) => it.fav);
-        return items.filter((it) => it.type === view && !it.fav);
+        if (view === 'watchlist') return items.filter((it) => it.fav && !it.disliked);
+        return items.filter((it) => it.type === view && !it.fav && !it.disliked);
     }, [library, view]);
-
-    const dislikedCount = useMemo(() => base.filter((it) => it.disliked).length, [base]);
-    const filters = view === 'watchlist' ? FILTERS.filter((f) => f.id !== 'disliked') : FILTERS;
 
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
         const shown = base
             .filter((it) => !q || it.title.toLowerCase().includes(q))
-            .filter((it) => (filter === 'disliked' ? it.disliked : !it.disliked && (filter === 'all' || statusOf(it) === filter)));
+            .filter((it) => filter === 'all' || statusOf(it) === filter);
         return sortItems(shown, sort, dir);
     }, [base, query, filter, sort, dir]);
 
@@ -102,10 +98,9 @@ export function LibraryPage({ view }) {
                             <input className="search__input" placeholder="Filtrer par titre" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Filtrer par titre" />
                         </label>
                         <div className="segmented" role="radiogroup" aria-label="Afficher">
-                            {filters.map((f) => (
+                            {FILTERS.map((f) => (
                                 <button key={f.id} role="radio" aria-checked={filter === f.id} className={`segmented__opt ${filter === f.id ? 'is-active' : ''}`} onClick={() => setFilter(f.id)}>
                                     {f.label}
-                                    {f.id === 'disliked' && dislikedCount > 0 && <span className="segmented__count">{dislikedCount}</span>}
                                 </button>
                             ))}
                         </div>
@@ -147,14 +142,6 @@ export function LibraryPage({ view }) {
                             {empty.cta}
                         </button>
                     )}
-                </div>
-            ) : visible.length === 0 && filter === 'disliked' && !query.trim() ? (
-                <div className="empty">
-                    <h2 className="empty__title">Aucun titre pas aimé</h2>
-                    {!readOnly && <p className="empty__text">Depuis la fiche d’un titre, choisis « Pas aimé » pour le ranger ici, à part du reste de ta liste.</p>}
-                    <button className="btn btn--secondary" onClick={() => setFilter('all')}>
-                        Tout afficher
-                    </button>
                 </div>
             ) : visible.length === 0 ? (
                 <div className="empty">

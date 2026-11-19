@@ -1,11 +1,12 @@
 // GET /api/library?id=…           → bibliothèque d'un profil (lecture publique, mode spectateur)
 // GET /api/library?recommended=1  → œuvres recommandées par chaque profil
+// GET /api/library?disliked=1     → œuvres pas aimées par chaque profil, avec la raison
 // PUT /api/library?id=…           → enregistre la bibliothèque { items, lastKnownTotals, baseVersion }
 import { getKV } from './_lib/kv.js';
 import { route, send, body, cleanString, HttpError } from './_lib/http.js';
 import { keys, listProfiles, emptyLibrary, sanitizeItem, sanitizeTotals, MAX_ITEMS } from './_lib/store.js';
 import { requireWrite } from './_lib/auth.js';
-import { recordLibraryChanges } from './_lib/activity.js';
+import { recordLibraryChanges, progressOf } from './_lib/activity.js';
 
 export default route({
     async GET(req, res) {
@@ -20,6 +21,30 @@ export default route({
                 items: (libraries[i]?.items || [])
                     .filter((it) => it.recommended)
                     .map(({ title, type, malId, anilistId, imageUrl, total, status }) => ({ title, type, malId, anilistId, imageUrl, total, status })),
+            }));
+            return send(res, 200, { profiles: result });
+        }
+
+        if (req.query?.disliked) {
+            const profiles = await listProfiles(kv);
+            const libraries = profiles.length ? await kv.mget(profiles.map((p) => keys.library(p.id))) : [];
+            const result = profiles.map((p, i) => ({
+                id: p.id,
+                name: p.name,
+                avatar: p.avatarVersion || null,
+                items: (libraries[i]?.items || [])
+                    .filter((it) => it.disliked)
+                    .map((it) => ({
+                        id: it.id,
+                        title: it.title,
+                        type: it.type,
+                        malId: it.malId,
+                        anilistId: it.anilistId,
+                        imageUrl: it.imageUrl,
+                        total: progressOf(it).total,
+                        reason: it.dislikedReason || '',
+                        at: it.dislikedAt || it.updatedAt || 0,
+                    })),
             }));
             return send(res, 200, { profiles: result });
         }

@@ -1,14 +1,16 @@
 // Carte d'une œuvre dans la grille : couverture, titre, progression et réglage rapide.
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, BookmarkCheck, Minus, MoreHorizontal, Plus, RefreshCw, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { Cover } from './ui/Cover.jsx';
 import { Menu } from './ui/Menu.jsx';
 import { percentOf, progressOf, statusOf, stepProgress, isCaughtUp } from '../lib/items.js';
 import { useItemActions } from '../hooks/useItemActions.js';
+import { DislikeDialog } from './DislikeDialog.jsx';
 
 export const ItemCard = memo(function ItemCard({ item, readOnly }) {
     const actions = useItemActions();
+    const [disliking, setDisliking] = useState(false);
     const { current, total } = progressOf(item);
     const percent = percentOf(item);
     const status = statusOf(item);
@@ -69,15 +71,16 @@ export const ItemCard = memo(function ItemCard({ item, readOnly }) {
                                 onSelect: () => actions.toggleRecommended(item),
                             },
                             {
-                                label: item.disliked ? 'Retirer de « Pas aimés »' : 'Ranger dans « Pas aimés »',
+                                label: item.disliked ? 'Retirer de « Pas aimés »' : 'Pas aimé…',
                                 icon: ThumbsDown,
-                                onSelect: () => actions.toggleDisliked(item),
+                                onSelect: () => (item.disliked ? actions.removeDisliked(item) : setDisliking(true)),
                             },
                             { label: 'Actualiser les infos', icon: RefreshCw, onSelect: () => actions.refresh(item) },
                             'separator',
                             { label: 'Supprimer', icon: Trash2, danger: true, onSelect: () => actions.remove(item) },
                         ]}
                     />
+                    {disliking && <DislikeDialog item={item} open onClose={() => setDisliking(false)} />}
                 </div>
             )}
         </article>

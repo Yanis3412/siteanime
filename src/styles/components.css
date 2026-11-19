@@ -216,22 +216,6 @@
     box-shadow: 0 0 0 1px var(--line-strong);
 }
 
-.segmented__count {
-    display: inline-grid;
-    place-items: center;
-    min-width: 18px;
-    height: 18px;
-    margin-left: 6px;
-    padding: 0 5px;
-    border-radius: var(--r-pill);
-    background: var(--bg-hover);
-    font-size: var(--fs-xs);
-    font-variant-numeric: tabular-nums;
-}
-.segmented__opt.is-active .segmented__count {
-    background: var(--line-strong);
-}
-
 .select select {
     appearance: none;
     min-height: 36px;
@@ -791,7 +775,20 @@
     color: var(--text);
 }
 
-@media (max-width: 860px) {
+/* Fenêtre moyenne : onglets plus serrés pour tenir sur une ligne */
+@media (max-width: 1200px) {
+    .topbar__inner {
+        gap: var(--s5);
+    }
+    .tabs {
+        gap: var(--s4);
+    }
+}
+/* En dessous : onglets sur leur propre ligne, qui défile */
+@media (max-width: 1040px) {
+    :root {
+        --topbar-h: 99px; /* hauteur des deux lignes (sert aux éléments collants) */
+    }
     .topbar__inner {
         flex-wrap: wrap;
         height: auto;
