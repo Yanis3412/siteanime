@@ -8,6 +8,7 @@ import { ProfilesPage } from './pages/ProfilesPage.jsx';
 import { LibraryPage } from './pages/LibraryPage.jsx';
 import { ItemPage } from './pages/ItemPage.jsx';
 import { RecommendationsPage, DislikedPage } from './pages/OpinionsPage.jsx';
+import { ProfilePage } from './pages/ProfilePage.jsx';
 import { ActivityPage } from './pages/ActivityPage.jsx';
 import { SitesPage } from './pages/SitesPage.jsx';
 import { ReaderPage } from './pages/ReaderPage.jsx';
@@ -63,6 +64,7 @@ export function App() {
                 <Route path="/watchlist" element={<LibraryPage view="watchlist" />} />
                 <Route path="/recommandations" element={<RecommendationsPage />} />
                 <Route path="/meh" element={<DislikedPage />} />
+                <Route path="/profil/:id" element={<ProfilePage />} />
                 <Route path="/pas-aimes" element={<Navigate to="/meh" replace />} />
                 <Route path="/activite" element={<ActivityPage />} />
                 <Route path="/sites" element={<SitesPage />} />

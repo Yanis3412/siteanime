@@ -41,6 +41,12 @@ export const api = {
     deleteProfile: (id, token) => request('DELETE', `profile?id=${encodeURIComponent(id)}`, { token }),
     setAvatar: (id, image, token) => request('PUT', `avatar?id=${encodeURIComponent(id)}`, { body: { image }, token }),
     removeAvatar: (id, token) => request('DELETE', `avatar?id=${encodeURIComponent(id)}`, { token }),
+    // Médias de la page de profil : « anim » (photo en GIF) et « banner » (bannière).
+    media: {
+        prepare: (id, payload, token) => request('POST', `avatar?id=${encodeURIComponent(id)}`, { body: { action: 'prepare', ...payload }, token }),
+        commit: (id, payload, token) => request('POST', `avatar?id=${encodeURIComponent(id)}`, { body: { action: 'commit', ...payload }, token }),
+        remove: (id, kind, token) => request('DELETE', `avatar?${qs({ id, kind })}`, { token }),
+    },
 
     login: (profileId, pin) => request('POST', 'session', { body: { profileId, pin } }),
     checkSession: (token) => request('GET', 'session', { token }),
@@ -92,4 +98,11 @@ export const api = {
 export function avatarUrl(profile) {
     if (!profile?.avatar) return null;
     return `/api/avatar?${qs({ id: profile.id, v: profile.avatar })}`;
+}
+
+// Média de la page de profil (« anim » ou « banner ») ; still : image fixe de la bannière en GIF.
+export function mediaUrl(profile, kind, { still = false } = {}) {
+    const m = profile?.[kind];
+    if (!m) return null;
+    return `/api/avatar?${qs({ id: profile.id, kind, v: m.v, ...(still && m.still ? { still: 1 } : {}) })}`;
 }

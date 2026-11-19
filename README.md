@@ -131,6 +131,14 @@ watchlist) et fil des dernières nouvelles. Le fil est rempli côté serveur à 
 (`api/_lib/activity.js` compare l'avant et l'après : ajouts, progression regroupée par séance de 6 h,
 séries terminées, watchlist, recommandations) et à chaque chapitre importé ; un journal de 100 lignes par profil.
 
+## Pages de profil
+
+Chaque profil a sa page (`/profil/<id>`), ouverte depuis « Mon profil » dans le menu ou en cliquant sur un nom dans Activité, Recommandations et Meh : bannière, photo, bio, chiffres, top 3 Anime et Manga, derniers avis. « Modifier mon profil » permet de tout changer.
+
+- La photo peut être un GIF (5 Mo au maximum) : il bouge sur la page de profil ; partout ailleurs, c'est sa première image, cadrée, qui s'affiche. Avec « réduire les animations » activé sur l'appareil, la page de profil reste fixe aussi.
+- La bannière (image ou GIF) est au format 3:1. Une image fixe est réduite avant l'envoi.
+- Les GIF et les bannières sont rangés dans R2 (`profiles/<id>/…`) avec leur cadrage ; ils sont supprimés avec le profil.
+
 ## Appli sur téléphone
 
 Le site s'installe comme une appli (PWA) : `public/manifest.webmanifest`, icônes dans `public/icons/`,

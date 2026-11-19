@@ -1,13 +1,14 @@
 // Menu du profil : changer de profil, photo, renommer, code, export/import, thème, administration.
 import { useState } from 'react';
-import { CalendarX, DatabaseBackup, Download, Smartphone, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CalendarX, DatabaseBackup, Download, Smartphone, ImagePlus, KeyRound, Moon, Pencil, Sun, Trash2, Upload, UserCog, UserRound, Users } from 'lucide-react';
 import { useApp } from '../state/app.jsx';
 import { useUi } from '../state/ui.jsx';
 import { Menu } from './ui/Menu.jsx';
 import { Avatar } from './ui/Avatar.jsx';
 import { Dialog } from './ui/Dialog.jsx';
 import { PinField } from './PinField.jsx';
-import { PhotoField } from './PhotoField.jsx';
+import { ProfileEditor } from './ProfileEditor.jsx';
 import { ManageProfilesDialog } from './ManageProfiles.jsx';
 import { BackupsDialog } from './Backups.jsx';
 import { InstallDialog } from './InstallApp.jsx';
@@ -20,7 +21,8 @@ export function ProfileMenu() {
     const app = useApp();
     const { profile, readOnly, library, hasAdminAccess } = app;
     const { toast, confirm, theme, toggleTheme } = useUi();
-    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'photo' | 'manage' | 'backups' | 'install'
+    const navigate = useNavigate();
+    const [dialog, setDialog] = useState(null); // 'rename' | 'pin' | 'profile' | 'manage' | 'backups' | 'install'
 
     if (!profile) return null;
 
@@ -140,9 +142,10 @@ export function ProfileMenu() {
                         ),
                     },
                     // Ferme la session : le code sera redemandé pour revenir sur ce profil.
+                    { label: 'Mon profil', icon: UserRound, onSelect: () => navigate(`/profil/${profile.id}`) },
                     { label: 'Changer de profil', icon: Users, onSelect: app.leave },
                     'separator',
-                    !readOnly && { label: 'Changer la photo', icon: ImagePlus, onSelect: () => setDialog('photo') },
+                    !readOnly && { label: 'Modifier mon profil', icon: ImagePlus, onSelect: () => setDialog('profile') },
                     !readOnly && { label: 'Renommer le profil', icon: Pencil, onSelect: () => setDialog('rename') },
                     !readOnly && { label: 'Changer le code', icon: KeyRound, onSelect: () => setDialog('pin') },
                     { label: 'Exporter la liste', icon: Download, onSelect: exportList },
@@ -158,14 +161,7 @@ export function ProfileMenu() {
             />
             <RenameDialog open={dialog === 'rename'} onClose={() => setDialog(null)} />
             <PinDialog open={dialog === 'pin'} onClose={() => setDialog(null)} />
-            <Dialog open={dialog === 'photo'} onClose={() => setDialog(null)} title="Photo du profil" size="sm">
-                <PhotoField profile={profile} />
-                <div className="form__actions">
-                    <button type="button" className="btn btn--secondary" onClick={() => setDialog(null)}>
-                        Fermer
-                    </button>
-                </div>
-            </Dialog>
+            <ProfileEditor open={dialog === 'profile'} onClose={() => setDialog(null)} profile={profile} />
             <ManageProfilesDialog open={dialog === 'manage'} onClose={() => setDialog(null)} />
             <BackupsDialog open={dialog === 'backups'} onClose={() => setDialog(null)} />
             <InstallDialog open={dialog === 'install'} onClose={() => setDialog(null)} />

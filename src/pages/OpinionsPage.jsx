@@ -204,9 +204,13 @@ function OpinionsPage({ kind }) {
                                             const isMe = profile.id === session.profileId;
                                             return (
                                                 <li key={profile.id} className="opinion">
-                                                    <Avatar name={profile.name} src={avatarUrl(profile)} size="sm" />
+                                                    <Link to={`/profil/${profile.id}`} aria-hidden="true" tabIndex={-1}>
+                                                        <Avatar name={profile.name} src={avatarUrl(profile)} size="sm" />
+                                                    </Link>
                                                     <div className="opinion__body">
-                                                        <span className="opinion__who">{profile.name}</span>
+                                                        <Link to={`/profil/${profile.id}`} className="opinion__who">
+                                                            {profile.name}
+                                                        </Link>
                                                         {item.reason ? <p className="opinion__text">{item.reason}</p> : <p className="opinion__text opinion__text--none">Pas de raison donnée.</p>}
                                                         <div className="opinion__foot">
                                                             <Votes

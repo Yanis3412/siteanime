@@ -992,3 +992,179 @@
     font-size: var(--fs-sm);
     color: var(--text-muted);
 }
+
+/* ---------- Image cadrée (GIF, bannière) ---------- */
+.framed {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+.framed img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.avatar__anim {
+    border-radius: 50%;
+}
+.avatar--xl {
+    width: 136px;
+    height: 136px;
+    font-size: 2.75rem;
+}
+
+/* ---------- Cadrage de la bannière ---------- */
+.crop-measure {
+    width: 100%;
+}
+.crop.crop--banner {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: var(--s4);
+}
+.crop__banner-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s2) var(--s4);
+}
+.crop--banner .crop__actions {
+    grid-template-columns: auto auto;
+    justify-self: end;
+    margin-top: 0;
+}
+.crop__note {
+    margin-top: var(--s2);
+}
+
+/* ---------- Modifier mon profil ---------- */
+.pedit,
+.pedit__form {
+    display: grid;
+    gap: var(--s5);
+}
+.pedit__section {
+    display: grid;
+    gap: var(--s2);
+}
+.pedit__title {
+    font-size: var(--fs-md);
+    font-weight: 700;
+}
+.pedit__bio {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.5;
+}
+.pedit__count {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+}
+.banner-field {
+    display: grid;
+    gap: var(--s2);
+}
+.banner-field__preview {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 3 / 1;
+    overflow: hidden;
+    border-radius: var(--r-ctrl);
+    background: var(--bg-sunken);
+}
+.banner-field.is-busy .banner-field__preview {
+    opacity: 0.55;
+}
+.banner-field__empty {
+    font-size: var(--fs-sm);
+    color: var(--text-faint);
+}
+.banner-field__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+}
+.top-edit {
+    display: grid;
+    gap: var(--s2);
+}
+.top-edit__list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+.top-edit__row {
+    display: grid;
+    grid-template-columns: 20px 40px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s3);
+}
+.top-edit__rank {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--accent);
+}
+.top-edit__title {
+    overflow: hidden;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.top-edit__tools {
+    display: flex;
+    gap: 2px;
+}
+.top-edit__add {
+    justify-self: start;
+}
+.top-edit__picker {
+    display: grid;
+    justify-items: start;
+    gap: var(--s2);
+    padding: var(--s3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctrl);
+    background: var(--bg-sunken);
+}
+.top-edit__picker .search {
+    width: 100%;
+}
+.top-edit__options {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    max-height: 248px;
+    overflow-y: auto;
+}
+.top-edit__option {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: var(--r-ctrl);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.top-edit__option:hover,
+.top-edit__option:focus-visible {
+    background: var(--bg-hover);
+}
+.top-edit__none {
+    padding: 6px 8px;
+}

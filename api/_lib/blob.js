@@ -47,6 +47,13 @@ function r2Storage({ accountId, accessKeyId, secretAccessKey, bucket }) {
         configured: true,
         signUpload: (key, ttl = UPLOAD_TTL) => presign(key, 'PUT', ttl),
         signRead: (key) => presign(key, 'GET', READ_TTL),
+        // Premiers octets d'un fichier (pour vérifier son vrai format).
+        async readStart(key, n = 16) {
+            const res = await client.fetch(objectUrl(key), { headers: { Range: `bytes=0-${n - 1}` } });
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error(`R2 GET ${res.status}`);
+            return Buffer.from(await res.arrayBuffer()).subarray(0, n);
+        },
         async size(key) {
             const res = await client.fetch(objectUrl(key), { method: 'HEAD' });
             if (res.status === 404) return null;
@@ -108,6 +115,17 @@ function devStorage(dir) {
         dev: true,
         signUpload: async (key) => `/__blob/${key}`,
         signRead: async (key) => `/__blob/${key}`,
+        async readStart(key, n = 16) {
+            try {
+                const handle = await fs.open(file(key));
+                const buf = Buffer.alloc(n);
+                const { bytesRead } = await handle.read(buf, 0, n, 0);
+                await handle.close();
+                return buf.subarray(0, bytesRead);
+            } catch {
+                return null;
+            }
+        },
         async size(key) {
             try {
                 return (await fs.stat(file(key))).size;
