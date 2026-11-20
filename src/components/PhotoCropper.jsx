@@ -36,10 +36,22 @@ export function PhotoCropper({ photo, name, onCancel, onConfirm, busy, mode = 'a
 }
 
 // La bannière prend toute la largeur de la fenêtre : on mesure la place avant d'afficher le cadre.
+// La mesure attend que la fenêtre soit vraiment ouverte (avant, sa largeur vaut 0), puis ne bouge plus.
 function BannerCropper(props) {
     const ref = useRef(null);
     const [width, setWidth] = useState(0);
-    useLayoutEffect(() => setWidth(Math.min(640, ref.current?.clientWidth || 0)), []);
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const measure = () => {
+            const w = Math.min(640, el.clientWidth);
+            if (w > 0) setWidth((current) => current || w);
+        };
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
     return (
         <div ref={ref} className="crop-measure">
             {width > 0 && <Cropper {...props} frame={{ w: width, h: Math.round(width / BANNER_RATIO) }} banner />}
