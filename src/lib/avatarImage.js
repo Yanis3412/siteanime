@@ -6,14 +6,14 @@ const MAX_INPUT = 25 * 1024 * 1024;
 export class AvatarImageError extends Error {}
 
 // Lit l'image (orientation de l'appareil photo respectée) pour l'éditeur de cadrage.
-// Un GIF est gardé tel quel (pour son animation) : 5 Mo au maximum ; bitmap = sa première image.
-export const GIF_MAX = 5 * 1024 * 1024;
+// Un GIF est gardé tel quel (pour son animation) : 15 Mo au maximum ; bitmap = sa première image.
+export const GIF_MAX = 15 * 1024 * 1024;
 
 export async function readPhoto(file) {
     if (!file.type.startsWith('image/')) throw new AvatarImageError('Ce fichier n’est pas une image.');
     if (file.size > MAX_INPUT) throw new AvatarImageError('Image trop lourde (25 Mo au maximum).');
     const animated = file.type === 'image/gif';
-    if (animated && file.size > GIF_MAX) throw new AvatarImageError('GIF trop lourd (5 Mo au maximum).');
+    if (animated && file.size > GIF_MAX) throw new AvatarImageError('GIF trop lourd (15 Mo au maximum).');
     let bitmap;
     try {
         bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });

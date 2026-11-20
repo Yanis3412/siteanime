@@ -3,7 +3,7 @@
 //   GET    /api/avatar?id=…&v=…            → la photo. L'adresse change à chaque nouvelle photo (v) : cache très long.
 //   PUT    /api/avatar?id=…                → { image: 'data:image/webp;base64,…' } remplace la photo (et retire le GIF)
 //   DELETE /api/avatar?id=…                → retire la photo et le GIF (retour aux initiales)
-// Médias de la page de profil, rangés dans R2 (jusqu'à 5 Mo) avec leur cadrage :
+// Médias de la page de profil, rangés dans R2 (jusqu'à 15 Mo) avec leur cadrage :
 // « anim » = photo en GIF (animée seulement sur la page de profil), « banner » = bannière (image ou GIF).
 //   GET    /api/avatar?id=…&kind=…&v=…     → redirige vers le fichier (lien signé) ; &still=1 : image fixe de la bannière GIF
 //   POST   /api/avatar?id=… { action: 'prepare', kind, type, size, stillType?, stillSize? } → liens d'envoi
@@ -16,7 +16,7 @@ import { requireWrite } from './_lib/auth.js';
 import { getBlob } from './_lib/blob.js';
 
 const MAX_BYTES = 200 * 1024;
-const MEDIA_MAX = 5 * 1024 * 1024;
+const MEDIA_MAX = 15 * 1024 * 1024;
 const DATA_URL = /^data:(image\/(?:webp|jpeg|png));base64,([A-Za-z0-9+/]+={0,2})$/;
 const MEDIA_KINDS = ['anim', 'banner'];
 const EXT = { 'image/gif': 'gif', 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' };
@@ -67,7 +67,7 @@ async function checkUpload(blob, key, pattern, allowed) {
     if (!pattern.test(key)) throw new HttpError(400, 'Fichier inconnu');
     const size = await blob.size(key);
     if (size === null) throw new HttpError(400, 'Le fichier n’est pas arrivé. Réessaie.');
-    if (size > MEDIA_MAX) throw new HttpError(413, 'Fichier trop lourd (5 Mo au maximum).');
+    if (size > MEDIA_MAX) throw new HttpError(413, 'Fichier trop lourd (15 Mo au maximum).');
     const type = sniff(await blob.readStart(key, 16));
     const ext = key.split('.').pop();
     if (!type || !allowed.includes(type) || EXT[type] !== ext) throw new HttpError(400, 'Format non reconnu.');
@@ -137,13 +137,13 @@ export default route({
         if (input.action === 'prepare') {
             const type = String(input.type || '');
             if (!allowed.includes(type)) throw new HttpError(400, kind === 'anim' ? 'Seuls les GIF sont acceptés ici.' : 'Utilise une image JPG, PNG, WebP ou GIF.');
-            if (!(Number(input.size) > 0) || Number(input.size) > MEDIA_MAX) throw new HttpError(413, 'Fichier trop lourd (5 Mo au maximum).');
+            if (!(Number(input.size) > 0) || Number(input.size) > MEDIA_MAX) throw new HttpError(413, 'Fichier trop lourd (15 Mo au maximum).');
             const stamp = `${Date.now()}`;
             const key = `profiles/${profile.id}/${kind}-${stamp}.${EXT[type]}`;
             const result = { key, url: await blob.signUpload(key) };
             // Bannière en GIF : une image fixe à part, pour ceux qui préfèrent sans animation.
             if (kind === 'banner' && type === 'image/gif' && STILL_EXT[input.stillType]) {
-                if (!(Number(input.stillSize) > 0) || Number(input.stillSize) > MEDIA_MAX) throw new HttpError(413, 'Fichier trop lourd (5 Mo au maximum).');
+                if (!(Number(input.stillSize) > 0) || Number(input.stillSize) > MEDIA_MAX) throw new HttpError(413, 'Fichier trop lourd (15 Mo au maximum).');
                 result.stillKey = `profiles/${profile.id}/${kind}-${stamp}-still.${STILL_EXT[input.stillType]}`;
                 result.stillUrl = await blob.signUpload(result.stillKey);
             }

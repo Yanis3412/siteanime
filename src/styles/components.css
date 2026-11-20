@@ -610,9 +610,16 @@
 /* ---------- Toasts et tâches ---------- */
 .toasts {
     position: fixed;
+    inset: auto;
     left: 50%;
     bottom: calc(20px + var(--safe-bottom));
     z-index: 100;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    overflow: visible;
     display: grid;
     gap: var(--s2);
     width: min(440px, calc(100vw - 32px));
