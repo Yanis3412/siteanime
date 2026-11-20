@@ -1051,6 +1051,10 @@
 .crop__note {
     margin-top: var(--s2);
 }
+.crop__small {
+    max-width: 60ch;
+    text-align: center;
+}
 
 /* ---------- Modifier mon profil ---------- */
 .pedit,
@@ -1082,7 +1086,7 @@
 .banner-field__preview {
     display: grid;
     place-items: center;
-    aspect-ratio: 3 / 1;
+    aspect-ratio: 5 / 2;
     overflow: hidden;
     border-radius: var(--r-ctrl);
     background: var(--bg-sunken);

@@ -1,6 +1,6 @@
 // Cadrage avant l'enregistrement : on déplace l'image dans le cadre, on zoome (curseur, molette,
 // pincement) et, pour une photo fixe, on peut la faire pivoter.
-// mode « avatar » : cercle, aperçu aux tailles réelles. mode « banner » : bannière au format 3:1.
+// mode « avatar » : cercle, aperçu aux tailles réelles. mode « banner » : bannière au format 5:2 (proche de la plupart des GIF).
 // onConfirm({ image, framing }) : image = photo 256 × 256 prête à envoyer (mode avatar),
 // framing = { x, y, s } cadrage relatif au cadre, pour afficher un GIF ou une bannière à n'importe quelle taille.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -12,7 +12,7 @@ const VIEW = 272; // côté de la zone de cadrage, en pixels
 const MAX_ZOOM = 5;
 const PREVIEWS = [88, 36];
 
-export const BANNER_RATIO = 3;
+export const BANNER_RATIO = 2.5;
 
 export function PhotoCropper({ photo, name, onCancel, onConfirm, busy, mode = 'avatar' }) {
     const banner = mode === 'banner';
@@ -202,6 +202,11 @@ function Cropper({ photo, name, onCancel, onConfirm, busy, frame = { w: VIEW, h:
                 >
                     <img src={photo.url} alt="" draggable="false" style={imgStyle} />
                 </div>
+                {photo.width < 1000 && (
+                    <p className="field__hint crop__small">
+                        Cette image fait {photo.width} pixels de large : sur un grand écran, elle sera agrandie et un peu floue. Une version plus grande rendra mieux.
+                    </p>
+                )}
                 <div className="crop__banner-tools">
                     {zoomControls}
                     <button

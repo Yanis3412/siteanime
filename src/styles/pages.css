@@ -1972,11 +1972,12 @@ a.opinion__who:hover {
 
 /* ---------- Page de profil ---------- */
 .profile {
-    max-width: 1080px;
+    max-width: 960px;
+    margin-inline: auto;
 }
 /* Sans bannière : un fond à la teinte du profil (la même que ses initiales). */
 .profile__banner {
-    aspect-ratio: 3 / 1;
+    aspect-ratio: 5 / 2;
     overflow: hidden;
     border-radius: var(--r-panel);
     background: var(--bg-sunken);
@@ -1991,8 +1992,10 @@ a.opinion__who:hover {
         radial-gradient(120% 140% at 0% 100%, hsl(var(--profile-hue, 40) 40% 80%) 0%, transparent 60%),
         hsl(var(--profile-hue, 40) 25% 92%);
 }
-/* La photo chevauche la bannière ; le nom et la bio commencent juste en dessous. */
+/* La photo chevauche la bannière (au-dessus d'elle) ; le nom et la bio commencent juste en dessous. */
 .profile__head {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: start;
