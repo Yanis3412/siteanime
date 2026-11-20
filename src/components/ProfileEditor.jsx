@@ -159,7 +159,7 @@ function BannerField({ profile }) {
                     </button>
                 )}
             </div>
-            <p className="field__hint">Une image ou un GIF (5 Mo au maximum pour un GIF), affiché en format large en haut de ta page.</p>
+            <p className="field__hint">Une image ou un GIF (15 Mo au maximum pour un GIF), affiché en format large en haut de ta page.</p>
             <PhotoCropper photo={photo} mode="banner" busy={busy} onCancel={close} onConfirm={save} />
         </div>
     );

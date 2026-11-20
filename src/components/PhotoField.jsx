@@ -71,7 +71,7 @@ export function PhotoField({ profile, asAdmin = false }) {
                         Retirer
                     </button>
                 )}
-                <p className="field__hint">Une image JPG, PNG, WebP ou un GIF (5 Mo au maximum) de ton ordinateur ou de ton téléphone. Tu pourras la cadrer avant de l’enregistrer. Le GIF bouge sur ta page de profil.</p>
+                <p className="field__hint">Une image JPG, PNG, WebP ou un GIF (15 Mo au maximum) de ton ordinateur ou de ton téléphone. Tu pourras la cadrer avant de l’enregistrer. Le GIF bouge sur ta page de profil.</p>
             </div>
             <PhotoCropper photo={photo} name={profile.name} busy={busy} onCancel={closeCropper} onConfirm={save} />
         </div>

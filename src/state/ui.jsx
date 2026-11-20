@@ -45,11 +45,26 @@ export function UiProvider({ children }) {
 
     const toggleTheme = useCallback(() => setThemeState((t) => (t === 'dark' ? 'light' : 'dark')), []);
 
+    // Les fenêtres ouvertes passent au premier plan du navigateur (« top layer ») : sans ça, un message
+    // affiché pendant qu'une fenêtre est ouverte resterait caché derrière. La zone des messages y passe
+    // aussi (popover), et repasse devant à chaque nouveau message.
+    const toastsRef = useRef(null);
+    useEffect(() => {
+        const el = toastsRef.current;
+        if (!el?.showPopover) return;
+        try {
+            if (el.matches(':popover-open')) el.hidePopover();
+            if (toasts.length) el.showPopover();
+        } catch {
+            /* navigateur sans popover : la zone reste affichée normalement */
+        }
+    }, [toasts]);
+
     return (
         <UiContext.Provider value={{ toast, confirm, theme, toggleTheme }}>
             {children}
 
-            <div className="toasts" role="status" aria-live="polite">
+            <div ref={toastsRef} className="toasts" popover="manual" role="status" aria-live="polite">
                 {toasts.map((t) => {
                     const Icon = t.tone === 'error' ? CircleAlert : t.tone === 'success' ? CircleCheck : Info;
                     return (
