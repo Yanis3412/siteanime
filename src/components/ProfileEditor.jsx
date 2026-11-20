@@ -96,7 +96,7 @@ function Editor({ profile, onClose }) {
     );
 }
 
-// Bannière : aperçu, choix d'une image ou d'un GIF, cadrage au format 3:1, retrait.
+// Bannière : aperçu, choix d'une image ou d'un GIF, cadrage au format 5:2, retrait.
 function BannerField({ profile }) {
     const { setProfileBanner } = useApp();
     const { toast } = useUi();
